@@ -1,28 +1,17 @@
-import signal
-import pyuv
+import socket
+
 
 class Server:
 
-    def __init__(self):
+    def __int__(self):
 
 
-    def start(self):
 
 
-    def __on_read(client, data, error):
-        if data is None:
-            client.close()
-            clients.remove(client)
-            return
-        client.write(data)
+    def process_incoming_con(self):
 
-    def __on_connection(server, error):
-        client = pyuv.TCP(server.loop)
-        server.accept(client)
-        clients.append(client)
-        client.start_read(on_read)
+    def get_free_id(self):
 
-    def __signal_cb(handle, signum):
-        [c.close() for c in clients]
-        signal_h.close()
-        server.close()
+    def accept_connection(self):
+
+    def reject_connection(self):

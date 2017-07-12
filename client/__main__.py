@@ -19,8 +19,6 @@ def signal_cb(handle, signum):
     signal_h.close()
     server.close()
 
-print("PyUV version %s" % pyuv.__version__)
-
 loop = pyuv.Loop.default_loop()
 clients = []
 
