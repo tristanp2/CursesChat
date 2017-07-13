@@ -22,6 +22,20 @@
                 "panel": "new"
             },
             "problemMatcher": []
+        },
+        {
+            "taskName": "test",
+            "command": "pytest -q ./tests/queue_tests.py",
+            "type": "shell",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
         }
     ]
 }

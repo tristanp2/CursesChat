@@ -1,7 +1,7 @@
 import threading
 
 
-class Queue:
+class ConcurrentQueue:
 
     def __init__(self):
         self.lock = Lock()
@@ -19,13 +19,16 @@ class Queue:
         lock.release()
         return result
 
-    def enqueue(self, item):
+    def push(self, item):
         lock.acquire()
         self.items.insert(len(self.items), item)
         lock.release()
 
-    def dequeue(self, item):
+    def pop(self, item):
         lock.acquire()
-        result = self.items.pop()
+        if self.items == []:
+            result = False
+        else:
+            result = self.items.pop()
         lock.release()
         return result
