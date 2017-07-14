@@ -33,7 +33,9 @@ class ConcurrentQueue:
         self.lock.release()
         return result
 
+
 class TestConcurrentQueue():
+
     def is_empty(self):
         queue = ConcurrentQueue()
         assert queue.isEmpty() is True
@@ -44,11 +46,12 @@ class TestConcurrentQueue():
 
     def size(self):
         queue = ConcurrentQueue()
-        # assert queue.size() is 0
-        # queue.push("Hello")
-        # assert queue.size() is 1
-        # queue.pop()
-        # assert queue.size() is 0
+        assert queue.size() is 0
+        queue.push("Hello")
+        assert queue.size() is 1
+        queue.pop()
+        assert queue.size() is 0
+
 
 if __name__ == '__main__':
     test = TestConcurrentQueue()
