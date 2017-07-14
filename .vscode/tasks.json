@@ -25,7 +25,7 @@
         },
         {
             "taskName": "test",
-            "command": "pytest -q ./tests/queue_tests.py",
+            "command": "pytest -q ./tests/test_concurrent_queue.py",
             "type": "shell",
             "group": {
                 "kind": "test",

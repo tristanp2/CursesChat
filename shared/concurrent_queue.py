@@ -4,31 +4,53 @@ import threading
 class ConcurrentQueue:
 
     def __init__(self):
-        self.lock = Lock()
+        self.lock = threading.Lock()
         self.items = []
 
     def isEmpty(self):
-        lock.acquire()
-        result = self.items = []
-        lock.release()
+        self.lock.acquire()
+        result = len(self.items) == 0
+        self.lock.release()
         return result
 
     def size(self):
-        lock.acquire()
+        self.lock.acquire()
         result = len(self.items)
-        lock.release()
+        self.lock.release()
         return result
 
     def push(self, item):
-        lock.acquire()
+        self.lock.acquire()
         self.items.insert(len(self.items), item)
-        lock.release()
+        self.lock.release()
 
-    def pop(self, item):
-        lock.acquire()
+    def pop(self):
+        self.lock.acquire()
         if self.items == []:
             result = False
         else:
             result = self.items.pop()
-        lock.release()
+        self.lock.release()
         return result
+
+class TestConcurrentQueue():
+    def is_empty(self):
+        queue = ConcurrentQueue()
+        assert queue.isEmpty() is True
+        queue.push("Hello")
+        assert queue.isEmpty() is False
+        queue.pop()
+        assert queue.isEmpty() is True
+
+    def size(self):
+        queue = ConcurrentQueue()
+        # assert queue.size() is 0
+        # queue.push("Hello")
+        # assert queue.size() is 1
+        # queue.pop()
+        # assert queue.size() is 0
+
+if __name__ == '__main__':
+    test = TestConcurrentQueue()
+    test.is_empty()
+    test.size()
