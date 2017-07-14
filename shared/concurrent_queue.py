@@ -29,7 +29,7 @@ class ConcurrentQueue:
         if self.items == []:
             result = False
         else:
-            result = self.items.pop()
+            result = self.items.pop(0)
         self.lock.release()
         return result
 
@@ -40,31 +40,36 @@ class TestConcurrentQueue():
         queue = ConcurrentQueue()
         assert queue.isEmpty() is True
 
-        for x in range(0, 20):
-            queue.push("Hello" + str(x))
+        # 0-19
+        for x in range(20):
+            queue.push(x)
             assert queue.isEmpty() is False
 
-        for x in range(0, 19):
-            queue.pop()
+        # 0-18
+        for x in range(19):
+            item = queue.pop()
+            assert item is x
             assert queue.isEmpty() is False
 
-        queue.pop()
+        item = queue.pop()
+        assert item is 19
         assert queue.isEmpty() is True
 
     def size(self):
         queue = ConcurrentQueue()
         assert queue.size() is 0
 
-        for x in range(0, 20):
-            queue.push("Hello" + str(x))
+        # 0-19
+        for x in range(20):
+            queue.push(x)
             assert queue.size() is x + 1
 
-        for x in range(0, 19):
-            queue.pop()
+        # 0-19
+        for x in range(20):
+            item = queue.pop()
+            assert item is x
             assert queue.size() is 20 - 1 - x
 
-        queue.pop()
-        assert queue.size() is 0
 
 if __name__ == '__main__':
     test = TestConcurrentQueue()
