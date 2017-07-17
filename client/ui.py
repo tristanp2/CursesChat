@@ -1,4 +1,3 @@
-
 import curses
 import threading
 import message
@@ -8,13 +7,13 @@ from curses.textpad import Textbox, rectangle
 class UI:
     __keycode = 1234;
     def __init__(self):
+        self._output_queue = ConcurrentQueue()
         self.screen = curses.initscr()
         self.scr_height, self.scr_width = self.screen.getmaxyx()
         curses.noecho()
+        self.temp_login_done = False
         self.do_login()
         self.start_chat()
-      #  self.input_thread = threading.Thread(None, self._input_loop)
-      #  self.input_thread.start()
 
     def do_login(self):
         login_win = SubWindowWrapper(self.screen, 1, 8, 2, self.scr_width)
@@ -26,6 +25,7 @@ class UI:
         self.screen.clear()
         del login_box
         del login_win
+        self.temp_login_done = True
         return username
 
     def start_chat(self):        
@@ -47,15 +47,18 @@ class UI:
             self.refresh_screen()
             self.input_box.edit()
             input = self.input_box.gather_and_clear()
-            self.output_box.put_str(input)
+            self._output_queue.push(input)
 
     def process_message(self, message):
         type = message.get_type()
         if type == MessageType.chat_message:
             m_str = message.get_alias() + ': ' + message.get_payload()
-            self.output_box.put_str(m_str)
+            self._output_queue.push(m_str)
         elif type == MessageType.command:
             pass
+        #the following will almost certainly be moved/changed
+        while not self._output_queue.isEmpty():
+            self.output_box.put_str(self._output_queue.pop())
 
     def parse(self, string):
         None
@@ -83,15 +86,14 @@ class ExTextbox(Textbox):
             if ch == '\n':
                 continue
             self._insert_printable_char(ch)
-        if ch == '\n':
-            self._insert_printable_char(curses.ascii.NL)
+        self._insert_printable_char(curses.ascii.NL)
         self.win.refresh()
     def clear(self):
         self.win.erase()
         self.win.refresh()
     
 
-#class for controlling textbox behaviour
+#wrapper class to allow easier creation and handling of curses subwindows
 class SubWindowWrapper:
     #Params:
     #uly, ulx: upper left coords
