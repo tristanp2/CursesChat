@@ -8,10 +8,10 @@ class Message:
 
     def create_message(type, payload, timestamp):
         pass
-    def get_alias():
+    def get_alias(self):
         return 'bob'
-    def get_payload():
-        return _payload
+    def get_payload(self):
+        return self._payload
     def get_type(self):
         return self._type
     def __init__(self):
