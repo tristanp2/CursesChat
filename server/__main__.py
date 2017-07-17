@@ -6,9 +6,9 @@ hostname = "localhost"
 port = 8870
 idcounter = 0
 freeid = 1001
-sendQ = con_queue
-receiveQ = con_queue
-CMDController = CMDController()#need the class
+sendQ = 0
+receiveQ = 0
+CMDController = 0#CMDController()#need the class
 
 #__int__(self, hostname, port, idcounter, freeid, sendQ, receiveQ, CMDController)
 
