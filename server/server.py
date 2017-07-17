@@ -3,7 +3,7 @@ import sys
 
 class Server:
 
-    def __int__(self, hostname, port, idcounter, freeid, sendQ, receiveQ, CMDController):
+    def __init__(self, hostname, port, idcounter, freeid, sendQ, receiveQ, CMDController):
         self.hostname = hostname
         self.port = port
         #create a TCP/IP socket
