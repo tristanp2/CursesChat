@@ -1,7 +1,7 @@
 import curses
 import threading
 import message
-from concurrent_queue import ConcurrentQueue
+from shared.concurrent_queue import ConcurrentQueue
 from datetime import datetime
 from message_type import MessageType
 from message import Message
@@ -13,9 +13,6 @@ class UI:
         self.screen = curses.initscr()
         self.scr_height, self.scr_width = self.screen.getmaxyx()
         curses.noecho()
-        self.temp_login_done = False
-        self.do_login()
-        self.start_chat()
 
     def do_login(self):
         login_win = SubWindowWrapper(self.screen, 1, 8, 2, self.scr_width)
@@ -23,12 +20,11 @@ class UI:
         self.screen.addstr(1,1, 'alias: ')
         self.refresh_screen()
         login_box.edit()
-        username = login_box.gather_and_clear()
+        alias = login_box.gather_and_clear()
         self.screen.clear()
         del login_box
         del login_win
-        self.temp_login_done = True
-        return username
+        return alias.strip()
 
     def start_chat(self):        
         self.input_win = SubWindowWrapper(self.screen, self.scr_height - 5, 8, self.scr_height - 3, self.scr_width - 8, 1)
@@ -43,19 +39,28 @@ class UI:
     def refresh_screen(self):
         if self.screen.is_wintouched():
             self.screen.refresh()
-    
+
+    def get_outgoing(self):
+        out_list = []
+        while not self._send_queue.isEmpty():
+            msg = self._send_queue.pop()
+            out_list.append(msg)
+        return out_list
+
     #this is run on its own thread
     def _input_loop(self):
         while True:
             self.refresh_screen()
             self.input_box.edit()
             input = self.input_box.gather_and_clear()
-            self._output_queue.push(input)
+            msg = self.parse_to_message(input)
+            if msg:
+                self._send_queue.push(msg)
 
     def process_message(self, message):
         type = message.get_type()
         if type == MessageType.chat_message:
-            m_str = message.get_alias() + ': ' + message.get_payload()
+            m_str = '{}<{}>: {}'.format(message.get_alias(), str(message.get_time())[:-7], message.get_payload())
             self._output_queue.push(m_str)
         elif type == MessageType.command:
             pass        
@@ -66,7 +71,7 @@ class UI:
             self.output_box.put_str(self._output_queue.pop())
         self.input_win.focus()
 
-    def parse(self, string):
+    def parse_to_message(self, string):
         trimmed = string.strip()
         if(trimmed[0] == '/'):
             args = trimmed.split(' ')
@@ -75,7 +80,7 @@ class UI:
             #if not in enum then reject
         else:
             msg = Message(MessageType.chat_message, trimmed, datetime.now().time())
-        self._send_queue.push(msg)
+        return msg
 
 
 class ExTextbox(Textbox):
@@ -177,6 +182,3 @@ class SubWindowWrapper:
         self._parentWin.refresh()
     def clear(self):
         self.win.clear()
-
-if __name__ == '__main__':
-    ui = UI()
