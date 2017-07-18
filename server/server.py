@@ -1,5 +1,10 @@
 import socket
 import sys
+from .send_message_handler import SendMessageHandler
+from .receive_message_handler import ReceiveMessageHandler
+from .client import Client
+from .chatroom import Chatroom
+from .command_controller import CMDcontroller
 
 class Server:
 
@@ -10,10 +15,17 @@ class Server:
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_adrs = (hostname, port)
         self.idcounter = idcounter
-        self.freeid = freeid
-        self.sendQ = sendQ
-        self.receiveQ = receiveQ
+        #we can mark used id as 'u' and free id as 'f'
+        self.freeid = {}
+        #id can be related to the client
+        self.client = {}
+        self.chatroom = {Chatroom():1}
+        self.send_MSGHandler = SendMessageHandler(self.socket)
+        self.receive_MSGHandler = ReceiveMessageHandler(self.socket)
         self.CMDController = CMDController
+        self.socket.bind(self.get_adrs())
+        self.socket.listen(1)
+
 
     def get_adrs(self):
         return self.server_adrs

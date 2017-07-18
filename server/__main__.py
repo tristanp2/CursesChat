@@ -3,7 +3,7 @@
 #run it with -m server on seng299 folder
 from .server import *
 
-hostname = 'localhost'
+hostname = str(socket.gethostbyname(socket.gethostname()))
 port = 10000
 idcounter = 0
 freeid = 1001
@@ -15,13 +15,8 @@ CMDController = 0#CMDController()#need the class
 
 mainserver = Server(hostname, port, idcounter, freeid, sendQ, receiveQ, CMDController)
 
-#sock = mainserver.get_sock()
-
-mainserver.socket.bind(mainserver.get_adrs())
-
-mainserver.socket.listen(1)
-
 while True:
+    print('Current server ip is ' + hostname)
     print('waiting for a connection')
     connection, client_adrs = mainserver.socket.accept()
 
