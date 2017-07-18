@@ -6,7 +6,7 @@ class Message:
     _payload = 'hello'
     _timestamp = datetime.time
 
-    def create_message(type, payload, timestamp):
+    def __init__(self, type, payload, timestamp):
         pass
     def get_alias(self):
         return 'bob'
