@@ -11,24 +11,28 @@ import socket
 from shared.concurrent_queue import ConcurrentQueue
 from ui import UI
 from threading import Thread
-from messenger import Messenger
-from message_handler import MessageHandler
+from message_receiver import MessageReceiver
+from message_sender import MessageSender
 from time import sleep
 
 class Client:
     def __init__(self):
-        self.socket = socket.socket()
-        self.messenger = Messenger(self.socket)
-        self.message_handler = MessageHandler(self.socket)
-        
-        self.receive_queue = ConcurrentQueue()
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        #asumming the server is localhost and port is 10000
+        self.server_adrs = ('localhost', 10000)
+        self.receiver = MessageReceiver(self.socket)
+        self.sender = MessageSender(self.socket)
+        self.received_queue = ConcurrentQueue()
+        self.outgoing_queue = ConcurrentQueue()
         self.ui = UI()
         #TODO: Initialize threads.
-
-        #TODO: start io loop thread
+        self.io_thread = Thread(None, self.__io_loop)
 
     def main_loop(self):
-        self.alias = self.ui.do_login()
+        self.alias = self.ui.start_login()
+        sleep(2)
+        self.socket.connect(self.server_adrs)
+        self.ui.end_login()
         self.ui.start_chat()
         while True:
             while not self.receive_queue.isEmpty():
@@ -42,10 +46,21 @@ class Client:
             sleep(0.5)
 
     #send and recieve       
-    def io_loop(self):
-        x = 1
+    def __io_loop(self):
+        #At the moment, sender and receiver classes seem pretty redundant
+        #May change this in near future
         while True:
-            x += 1
+            while not self.outgoing_queue.isEmpty():
+                msg = self.outgoing_queue.pop()
+                self.sender.push_message(msg)
+            msg = self.receiver.pop_message()
+            while msg != None:
+                self.received_queue.push(msg)
+                self.receiver.pop_message()
+
+            self.receiver.receive_message()
+            self.sender.send_message()
+
 
 if __name__ == '__main__':
     cl = Client()

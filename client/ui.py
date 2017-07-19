@@ -14,17 +14,22 @@ class UI:
         self.scr_height, self.scr_width = self.screen.getmaxyx()
         curses.noecho()
 
-    def do_login(self):
+    def start_login(self):
         login_win = SubWindowWrapper(self.screen, 1, 8, 2, self.scr_width)
         login_box = ExTextbox(login_win.win)
         self.screen.addstr(1,1, 'alias: ')
         self.refresh_screen()
         login_box.edit()
-        alias = login_box.gather_and_clear()
+        alias = login_box.gather_and_clear().strip()
         self.screen.clear()
         del login_box
         del login_win
-        return alias.strip()
+        self.screen.addstr(1,1, 'Attempting login...')
+        self.screen.refresh()
+        return alias
+
+    def end_login(self):
+        self.screen.clear()
 
     def start_chat(self):        
         self.input_win = SubWindowWrapper(self.screen, self.scr_height - 5, 8, self.scr_height - 3, self.scr_width - 8, 1)
@@ -52,8 +57,10 @@ class UI:
         while True:
             self.refresh_screen()
             self.input_box.edit()
+            msg = None
             input = self.input_box.gather_and_clear()
-            msg = self.parse_to_message(input)
+            if len(input) > 0:
+                msg = self.parse_to_message(input)
             if msg:
                 self._send_queue.push(msg)
 
@@ -66,10 +73,13 @@ class UI:
             pass        
 
     def update_chat(self):
+        written = False
         while not self._output_queue.isEmpty():
+            written = True
             y,x = self.output_win.win.getyx()
             self.output_box.put_str(self._output_queue.pop())
-        self.input_win.focus()
+        if written:
+            self.input_win.focus()
 
     def parse_to_message(self, string):
         trimmed = string.strip()
