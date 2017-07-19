@@ -1,12 +1,16 @@
-import datetime
+from datetime import datetime
+from .message_type import MessageType
 
 class Message:
 
-    def __init__(self):
-        self.clientID = -1
-        self.type = MessageType()
-        self.payload = ''
-        self.timestamp = datetime.time.today
-
-    def create_message(self, clientID, type, payload):
-        pass
+    #TODO: add cid
+    #note: it does not handle type for now
+    #TODO: will take away alias eventually
+    def __init__(self, alias, type, payload):
+        #self.clientID = clientID
+        self.alias = alias
+        self.type = MessageType(int(type))
+        self.payload = ' '.join(payload)
+        t = datetime.now()
+        str_t = t.strftime('%H:%M:%S')
+        self.timestamp = str_t

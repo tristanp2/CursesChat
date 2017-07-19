@@ -22,20 +22,30 @@ while True:
     read_sockets, write_sockets, error_sockets = select.select(mainserver.connected_client_socket, [], [])
 
     for sock in read_sockets:
+        #getting new client connection
         if sock == mainserver.socket:
             connection, client_adrs = mainserver.socket.accept()
             mainserver.connected_client_socket.append(connection)
+            #welcome the new user
+            #TODO: need to parse this message, remember, recv will block in here
             print('Client {!r} connected'.format(client_adrs))
-            mainserver.broadcast_data(connection, '{!r} entered chatroom'.format(client_adrs) , mainserver.connected_client_socket)
+            #TODO: broadcast alias not this
+            #mainserver.broadcast_data(connection, '{!r} entered chatroom'.format(client_adrs) , mainserver.connected_client_socket)
 
         else:
+            #print('enter else')
             try:
+               #print('before recv')
                 data = sock.recv(1024)
+                #print('after recv')
                 if data:
-                    mainserver.broadcast_data(sock ,'<{}>: {}'.format(sock.getpeername, data) ,mainserver.connected_client_socket)
-            except:
-                mainserver.broadcast_data(sock ,'Client {} is offline'.format(sock.getsockname) ,mainserver.connected_client_socket)
-                print('Client {} is offline'.format(sock.getsockname))
+                    msg = mainserver.CMDController.parse_input(data.decode())
+                    #message format should be: alias type time data
+                    mainserver.broadcast_data(sock ,'{} {} {} {}'.format(msg.alias, msg.type.value, msg.timestamp, msg.payload) ,mainserver.connected_client_socket)
+            except OSError as err:
+                print('OS error: {0}'.format(err))
+                mainserver.broadcast_data(sock ,'Client {} is offline'.format(sock.getpeername()) ,mainserver.connected_client_socket)
+                print('Client {} is offline'.format(sock.getpeername))
                 sock.close()
                 mainserver.connected_client_socket.remove(sock)
                 continue

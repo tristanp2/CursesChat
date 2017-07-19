@@ -19,11 +19,11 @@ class Server:
         #we can mark used id as 'u' and free id as 'f'
         self.freeid = {}
         #id can be related to the client
-        self.client = []
+        self.client = {}
         self.connected_client_socket = []
         self.send_MSGHandler = SendMessageHandler(self.socket)
         self.receive_MSGHandler = ReceiveMessageHandler(self.socket)
-        self.CMDController = CMDController
+        self.CMDController = CMDcontroller()
 
         self.socket.bind(self.get_adrs())
         self.socket.listen(5)
@@ -34,11 +34,14 @@ class Server:
 
     def broadcast_data(self, sock, message, List):
         for socket in List:
-            try:
-                socket.send(message)
-            except:
-                socket.close()
-                List.remove(socket)
+            if socket != self.socket:
+                try:
+                    socket.send(message.encode())
+                except OSError as err:
+                    print('OS error: {0}'.format(err))
+                    print(socket)
+                    socket.close()
+                    List.remove(socket)
 
     def process_incoming_con(self, socket):
         pass
