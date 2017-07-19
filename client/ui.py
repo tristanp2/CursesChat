@@ -89,7 +89,7 @@ class UI:
             #check enum for cmd
             #if not in enum then reject
         else:
-            msg = Message(MessageType.chat_message, trimmed, datetime.now().time())
+            msg = Message('msg', trimmed, datetime.now().time())
         return msg
 
 

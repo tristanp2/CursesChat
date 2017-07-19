@@ -6,12 +6,10 @@ class ConcurrentQueue:
     def __init__(self):
         self.lock = threading.Lock()
         self.items = []
+        self.num_items = 0
 
     def isEmpty(self):
-        self.lock.acquire()
-        result = len(self.items) == 0
-        self.lock.release()
-        return result
+        return self.num_items == 0
 
     def size(self):
         self.lock.acquire()
@@ -22,6 +20,7 @@ class ConcurrentQueue:
     def push(self, item):
         self.lock.acquire()
         self.items.insert(len(self.items), item)
+        self.num_items += 1
         self.lock.release()
 
     def pop(self):
@@ -30,6 +29,7 @@ class ConcurrentQueue:
             result = False
         else:
             result = self.items.pop(0)
+            self.num_items -= 1
         self.lock.release()
         return result
 

@@ -20,48 +20,52 @@ class Client:
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         #asumming the server is localhost and port is 10000
         self.server_adrs = ('134.87.133.12', 10000)
-        self.server_adrs = ('localhost', 10000)
         self.receiver = MessageReceiver(self.socket)
         self.sender = MessageSender(self.socket)
         self.received_queue = ConcurrentQueue()
         self.outgoing_queue = ConcurrentQueue()
         self.ui = UI()
 
-        self.io_thread = Thread(None, self.__io_loop)
+        self.send_thread = Thread(None, self.__send_loop, 'send_t')
+        self.recv_thread = Thread(None, self.__recv_loop, 'recv_t')
 
     def main_loop(self):
         self.alias = self.ui.start_login()
-        sleep(2)
         self.socket.connect(self.server_adrs)
         self.ui.end_login()
+        self.send_thread.start()
+        self.recv_thread.start()
         self.ui.start_chat()
         while True:
-            while not self.receive_queue.isEmpty():
-                msg = self.receive_queue.pop()
-                self.ui.process_message(msg)
+            while not self.received_queue.isEmpty():
+                msg = self.received_queue.pop()
+                self.ui.process_message(self.ui.parse_to_message(msg))
             outgoing = self.ui.get_outgoing()
+            if len(outgoing) != 0:
+                pass
             for m in outgoing:
                 m.set_alias(self.alias)
-                self.receive_queue.push(m)
+                self.outgoing_queue.push(m)
             self.ui.update_chat()
             sleep(0.5)
-
-    #send and recieve       
-    def __io_loop(self):
-        #At the moment, sender and receiver classes seem pretty redundant
-        #May change this in near future
+    
+    def __send_loop(self):
         while True:
             while not self.outgoing_queue.isEmpty():
                 msg = self.outgoing_queue.pop()
                 self.sender.push_message(msg)
+            sleep(0.5)
+            self.sender.send_message()
+
+    def __recv_loop(self):
+        while True:
             msg = self.receiver.pop_message()
             while msg != None:
                 self.received_queue.push(msg)
-                self.receiver.pop_message()
-
+                msg = self.receiver.pop_message()
+            sleep(0.5)
             self.receiver.receive_message()
-            self.sender.send_message()
-
+            pass
 
 if __name__ == '__main__':
     cl = Client()
