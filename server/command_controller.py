@@ -6,5 +6,7 @@ class CMDcontroller:
         self.chatroom = Chatroom()
 
     def isPermitted(self, client):
+        pass
 
     def proccessCMD(self, command):
+        pass

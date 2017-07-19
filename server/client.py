@@ -1,5 +1,6 @@
 class Client:
 
-    def __init__(self):
-        self.clientID = -1
-        self.type = MessageType()
+    def __init__(self, sox):
+        self.id = -1
+        self.name = ''
+        self.chatroom = ''

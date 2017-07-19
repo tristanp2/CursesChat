@@ -15,11 +15,34 @@ CMDController = 0#CMDController()#need the class
 
 mainserver = Server(hostname, port, idcounter, freeid, sendQ, receiveQ, CMDController)
 
-while True:
-    print('Current server ip is ' + hostname)
-    print('waiting for a connection')
-    connection, client_adrs = mainserver.socket.accept()
+print('Current server ip is ' + hostname)
 
+while True:
+
+    read_sockets, write_sockets, error_sockets = select.select(mainserver.connected_client_socket, [], [])
+
+    for sock in read_sockets:
+        if sock == mainserver.socket:
+            connection, client_adrs = mainserver.socket.accept()
+            mainserver.connected_client_socket.append(connection)
+            print('Client {!r} connected'.format(client_adrs))
+            mainserver.broadcast_data(connection, '{!r} entered chatroom'.format(client_adrs) , mainserver.connected_client_socket)
+
+        else:
+            try:
+                data = sock.recv(1024)
+                if data:
+                    mainserver.broadcast_data(sock ,'<{}>: {}'.format(sock.getpeername, data) ,mainserver.connected_client_socket)
+            except:
+                mainserver.broadcast_data(sock ,'Client {} is offline'.format(sock.getsockname) ,mainserver.connected_client_socket)
+                print('Client {} is offline'.format(sock.getsockname))
+                sock.close()
+                mainserver.connected_client_socket.remove(sock)
+                continue
+
+mainserver.shutdown(mainserver.socket)
+
+"""
     try:
         print('connection from', client_adrs)
 
@@ -36,4 +59,4 @@ while True:
 
     finally:
         connection.close()
-
+"""

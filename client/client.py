@@ -10,7 +10,7 @@ class Client:
     def __init__(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         #asumming the server is localhost and port is 10000
-        self.server_adrs = ('localhost', 10000)
+        self.server_adrs = ('134.87.133.12', 10000)
         self.messenger = Messenger(self.socket)
         self.message_handler = MessageHandler(self.socket)
 
@@ -35,9 +35,10 @@ class Client:
             print("Main: To infinity and beyond! " + str(x))
             x += 1
             teststring = b'client: Hello server!'
-            self.socket.sendall(teststring)
-            stringdata = self.socket.recv(1024)
-            print('received {!r}'.format(stringdata))
+            for i in range(3):
+                self.socket.sendall(teststring)
+                stringdata = self.socket.recv(1024)
+                print('received {!r}'.format(stringdata))
             self.socket.close()
             break
 
