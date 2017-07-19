@@ -35,7 +35,7 @@ class Client:
             print("Main: To infinity and beyond! " + str(x))
             x += 1
             teststring = b'client: Hello server!'
-            for i in range(3):
+            for i in range(5):
                 self.socket.sendall(teststring)
                 stringdata = self.socket.recv(1024)
                 print('received {!r}'.format(stringdata))
