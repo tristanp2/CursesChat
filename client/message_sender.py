@@ -12,4 +12,5 @@ class MessageSender:
     def send_message(self):
         msg = self.queue.pop()
         if msg:
-            self.socket.send(msg.get_payload().encode())
+            send_str = ' '.join(msg.get_send_list())
+            self.socket.send(send_str.encode())

@@ -3,11 +3,13 @@ import datetime
 class Message:
     #change this
     def __init__(self, type, payload, timestamp, alias = None):
-        self._type = type
-        self._payload = payload
-        self._alias = alias
-        self._time = timestamp
+        self._type = type       #MessageType
+        self._payload = payload #str
+        self._alias = alias     #str
+        self._time = timestamp  #datetime
 
+    def get_send_list(self):
+        return [self._alias, str(self._type.value), self._payload]
     def get_time(self):
         return self._time
     def get_alias(self):
