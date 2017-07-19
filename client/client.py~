@@ -19,14 +19,51 @@ class Client:
     def __init__(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         #asumming the server is localhost and port is 10000
+<<<<<<< HEAD
         self.server_adrs = ('134.87.133.12', 10000)
+        self.messenger = Messenger(self.socket)
+        self.message_handler = MessageHandler(self.socket)
+
+        #TODO: Initialize threads.
+
+        #TODO: Inform user login method
+        print('Login in by typing /login [username]')
+        print(socket.gethostbyname(socket.gethostname()))
+
+        #TODO: start main loop thread
+        self.main_loop()
+        #TODO: start io loop thread
+        #self.io_loop()
+
+    def main_loop(self):
+
+        #connect socket directly to server
+        self.socket.connect(self.server_adrs)
+
+        x = 1
+        while True:
+            print("Main: To infinity and beyond! " + str(x))
+            x += 1
+            teststring = b'client: Hello server!'
+            for i in range(3):
+                self.socket.sendall(teststring)
+                stringdata = self.socket.recv(1024)
+                print('received {!r}'.format(stringdata))
+            self.socket.close()
+            break
+
+            
+    def io_loop(self):
+        
+        x = 1
+=======
         self.server_adrs = ('localhost', 10000)
         self.receiver = MessageReceiver(self.socket)
         self.sender = MessageSender(self.socket)
         self.received_queue = ConcurrentQueue()
         self.outgoing_queue = ConcurrentQueue()
         self.ui = UI()
-
+        #TODO: Initialize threads.
         self.io_thread = Thread(None, self.__io_loop)
 
     def main_loop(self):
@@ -50,6 +87,7 @@ class Client:
     def __io_loop(self):
         #At the moment, sender and receiver classes seem pretty redundant
         #May change this in near future
+>>>>>>> a36e344d17ccaf6cd3f64ceef8d9d462c57d48dc
         while True:
             while not self.outgoing_queue.isEmpty():
                 msg = self.outgoing_queue.pop()

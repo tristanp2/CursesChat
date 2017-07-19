@@ -1,3 +1,4 @@
+from enum import Enum
 class MessageType(Enum):
     dict = {'chat_message': 1,
             'alias': 2,
