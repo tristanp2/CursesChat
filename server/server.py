@@ -33,12 +33,21 @@ class Server:
         return self.server_adrs
 
     def broadcast_data(self, sock, message, List):
+        print('in broadcast data')
         for socket in List:
-            try:
-                socket.send(message)
-            except:
-                socket.close()
-                List.remove(socket)
+            print('in List')
+            if socket != self.socket:
+                try:
+                    print(socket)
+                    print('123')
+
+                    socket.send(message.encode())
+                except OSError as err:
+                    print('OS error: {0}'.format(err))
+                    print(socket)
+                    print('except')
+                    socket.close()
+                    List.remove(socket)
 
     def process_incoming_con(self, socket):
         pass

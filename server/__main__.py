@@ -29,13 +29,17 @@ while True:
             mainserver.broadcast_data(connection, '{!r} entered chatroom'.format(client_adrs) , mainserver.connected_client_socket)
 
         else:
+            #print('enter else')
             try:
+               #print('before recv')
                 data = sock.recv(1024)
+                #print('after recv')
                 if data:
+                    #print('in data')
                     mainserver.broadcast_data(sock ,'<{}>: {}'.format(sock.getpeername, data) ,mainserver.connected_client_socket)
             except:
-                mainserver.broadcast_data(sock ,'Client {} is offline'.format(sock.getsockname) ,mainserver.connected_client_socket)
-                print('Client {} is offline'.format(sock.getsockname))
+                mainserver.broadcast_data(sock ,'Client {} is offline'.format(sock.getpeername) ,mainserver.connected_client_socket)
+                print('Client {} is offline'.format(sock.getpeername))
                 sock.close()
                 mainserver.connected_client_socket.remove(sock)
                 continue
