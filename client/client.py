@@ -39,15 +39,13 @@ class Client:
         while True:
             while not self.received_queue.isEmpty():
                 msg = self.received_queue.pop()
-                self.ui.process_message(self.ui.parse_to_message(msg))
+                self.ui.parse_and_push(msg)
             outgoing = self.ui.get_outgoing()
-            if len(outgoing) != 0:
-                pass
             for m in outgoing:
                 m.set_alias(self.alias)
                 self.outgoing_queue.push(m)
             self.ui.update_chat()
-            sleep(0.5)
+            sleep(0.2)
     
     def __send_loop(self):
         while True:
@@ -63,7 +61,6 @@ class Client:
             while msg != None:
                 self.received_queue.push(msg)
                 msg = self.receiver.pop_message()
-            sleep(0.5)
             self.receiver.receive_message()
             pass
 

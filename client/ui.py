@@ -6,7 +6,9 @@ from datetime import datetime
 from message_type import MessageType
 from message import Message
 from curses.textpad import Textbox, rectangle
+
 class UI:
+    time_format = '%H:%M:%S'
     def __init__(self):
         self._output_queue = ConcurrentQueue()
         self._send_queue = ConcurrentQueue()
@@ -60,36 +62,61 @@ class UI:
             msg = None
             input = self.input_box.gather_and_clear()
             if len(input) > 0:
-                msg = self.parse_to_message(input)
+                msg = self.parse_input(input)
             if msg:
                 self._send_queue.push(msg)
-
-    def process_message(self, message):
-        type = message.get_type()
-        if type == MessageType.chat_message:
-            m_str = '{}<{}>: {}'.format(message.get_alias(), str(message.get_time())[:-7], message.get_payload())
-            self._output_queue.push(m_str)
-        elif type == MessageType.command:
-            pass        
-
+    
+    #Empties Messages from output_queue, processes them, and outputs relevant strings to window
     def update_chat(self):
         written = False
         while not self._output_queue.isEmpty():
             written = True
-            y,x = self.output_win.win.getyx()
-            self.output_box.put_str(self._output_queue.pop())
+            msg = self._output_queue.pop()
+            out_str = self.process_message(msg)
+            if out_str:
+                self.output_box.put_str(out_str)
         if written:
             self.input_win.focus()
 
-    def parse_to_message(self, string):
+    def process_message(self, msg):
+        type = msg.get_type()
+        if type == MessageType.chat_message:
+            string = '{}<{}>: {}'.format(msg.get_alias(), msg.get_time().strftime(self.time_format), msg.get_payload())
+            return string
+        else:
+            pass
+    
+    #Parse received string to Message obj and push obj to UI's output_queue
+    def parse_and_push(self, string):
+        args = string.split(' ')
+        msg = None
+        if len(args) >= 2:
+            alias = args[0]
+            mtype = MessageType(int(args[1]))
+            time = datetime.strptime(args[2], self.time_format)
+            payload = ' '.join(args[3:])
+            msg = Message(mtype, payload, time, alias)
+        if(msg):
+            self._output_queue.push(msg)
+
+    def parse_input(self, string):
         trimmed = string.strip()
+        msg = None
         if(trimmed[0] == '/'):
             args = trimmed.split(' ')
-            cmd = args[0]
-            #check enum for cmd
-            #if not in enum then reject
+            if len(args) >= 2:
+                try:
+                    temp = ar
+                    cmd_val = MessageType[args[0][1:]]
+                except:
+                    pass
+                else:
+                    mtype = cmd_val
+                    time = None
+                    payload = ' '.join(args[1:])
+                    msg = Message(mtype, payload, time)
         else:
-            msg = Message('msg', trimmed, datetime.now().time())
+            msg = Message(MessageType.chat_message, trimmed, None)
         return msg
 
 
@@ -184,11 +211,19 @@ class SubWindowWrapper:
                 curses.textpad.rectangle(parent_win, uly - border_margin, ulx - border_margin, lry + border_margin, lrx + border_margin)
             except curses.error:
                 pass
+
     def get_parent(self):
         return self._parentWin
+
     def focus(self):
         y, x = self.win.getyx()
         self._parentWin.move(y + self.uly, x + self.ulx)
         self._parentWin.refresh()
+
     def clear(self):
         self.win.clear()
+
+if __name__ ==  '__main__':
+    msg = Message(MessageType.chat_message, 'hello', datetime.now(), 'joe')
+    ui = UI()
+    print(ui.process_message(msg))
