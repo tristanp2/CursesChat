@@ -46,6 +46,13 @@
     <Compile Include="client\test.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="server\chatroom.py" />
+    <Compile Include="server\client.py" />
+    <Compile Include="server\command_controller.py" />
+    <Compile Include="server\message.py" />
+    <Compile Include="server\message_type.py" />
+    <Compile Include="server\receive_message_handler.py" />
+    <Compile Include="server\send_message_handler.py" />
     <Compile Include="server\server.py" />
     <Compile Include="server\__main__.py" />
     <Compile Include="shared\concurrent_queue.py" />

@@ -1,16 +1,10 @@
-from shared.concurrent_queue import ConcurrentQueue
+from queue import Queue
 
 class MessageSender:
 
     def __init__(self, socket):
         self.socket = socket
-        self.queue = ConcurrentQueue()
 
-    def push_message(self, message):
-        self.queue.push(message)
-
-    def send_message(self):
-        msg = self.queue.pop()
-        if msg:
-            send_str = ' '.join(msg.get_send_list())
-            self.socket.send(send_str.encode())
+    def send_message(self, message):
+        send_str = ' '.join(m.get_send_list())
+        self.socket.send(send_str.encode())

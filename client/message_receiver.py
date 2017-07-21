@@ -1,13 +1,14 @@
-from shared.concurrent_queue import ConcurrentQueue
+from queue import Queue
 
 class MessageReceiver:
 
     def __init__(self, socket):
         self.socket = socket
-        self.queue = ConcurrentQueue()
+        self.queue = Queue()
+
     def pop_message(self):
-        if not self.queue.isEmpty():
-            return self.queue.pop()
+        self.queue.get()
+
     def receive_message(self):
         data = self.socket.recv(1024)
-        self.queue.push(data.decode())
+        self.queue.put(data.decode())
