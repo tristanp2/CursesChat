@@ -1,7 +1,7 @@
 import curses
 import threading
 import message
-from shared.concurrent_queue import ConcurrentQueue
+import queue
 from datetime import datetime
 from message_type import MessageType
 from message import Message
@@ -10,8 +10,8 @@ from curses.textpad import Textbox, rectangle
 class UI:
     time_format = '%H:%M:%S'
     def __init__(self):
-        self._output_queue = ConcurrentQueue()
-        self._send_queue = ConcurrentQueue()
+        self._output_queue = queue.Queue()
+        self._send_queue = queue.Queue()
         self.screen = curses.initscr()
         self.scr_height, self.scr_width = self.screen.getmaxyx()
         curses.noecho()
@@ -47,11 +47,16 @@ class UI:
         if self.screen.is_wintouched():
             self.screen.refresh()
 
+    #empties the outgoing queue contents into a list
+    #max 10 items will be returned in one call
     def get_outgoing(self):
         out_list = []
-        while not self._send_queue.isEmpty():
-            msg = self._send_queue.pop()
-            out_list.append(msg)
+        try:
+            while True:
+                msg = self._send_queue.get_nowait()
+                out_list.append(msg)
+        except queue.Empty:
+            pass
         return out_list
 
     #this is run on its own thread
@@ -64,14 +69,14 @@ class UI:
             if len(input) > 0:
                 msg = self.parse_input(input)
             if msg:
-                self._send_queue.push(msg)
+                self._send_queue.put(msg)
     
     #Empties Messages from output_queue, processes them, and outputs relevant strings to window
     def update_chat(self):
         written = False
-        while not self._output_queue.isEmpty():
+        while not self._output_queue.empty():
             written = True
-            msg = self._output_queue.pop()
+            msg = self._output_queue.get()
             out_str = self.process_message(msg)
             if out_str:
                 self.output_box.put_str(out_str)
@@ -97,7 +102,7 @@ class UI:
             payload = ' '.join(args[3:])
             msg = Message(mtype, payload, time, alias)
         if(msg):
-            self._output_queue.push(msg)
+            self._output_queue.put(msg)
 
     def parse_input(self, string):
         trimmed = string.strip()

@@ -1,14 +1,5 @@
-import os
-import sys
-path = os.path.abspath(__file__)
-path = path.split('\\')
-path = path[:-2]
-path = '\\'.join(path)
-sys.path.append(path)
-
-
 import socket
-from shared.concurrent_queue import ConcurrentQueue
+import queue
 from ui import UI
 from threading import Thread
 from message_receiver import MessageReceiver
@@ -19,11 +10,11 @@ class Client:
     def __init__(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         #asumming the server is localhost and port is 10000
-        self.server_adrs = ('134.87.133.12', 10000)
+        self.server_adrs = ('134.87.170.182', 10000)
         self.receiver = MessageReceiver(self.socket)
         self.sender = MessageSender(self.socket)
-        self.received_queue = ConcurrentQueue()
-        self.outgoing_queue = ConcurrentQueue()
+        self.received_queue = queue.Queue()
+        self.outgoing_queue = queue.Queue()
         self.ui = UI()
 
         self.send_thread = Thread(None, self.__send_loop, 'send_t')
@@ -37,32 +28,28 @@ class Client:
         self.recv_thread.start()
         self.ui.start_chat()
         while True:
-            while not self.received_queue.isEmpty():
-                msg = self.received_queue.pop()
-                self.ui.parse_and_push(msg)
+            try:
+                while True:
+                    msg = self.received_queue.get_nowait()
+                    self.ui.parse_and_push(msg)
+            except queue.Empty:
+                pass
             outgoing = self.ui.get_outgoing()
             for m in outgoing:
                 m.set_alias(self.alias)
-                self.outgoing_queue.push(m)
+                self.outgoing_queue.put(m)
             self.ui.update_chat()
             sleep(0.2)
     
     def __send_loop(self):
         while True:
-            while not self.outgoing_queue.isEmpty():
-                msg = self.outgoing_queue.pop()
-                self.sender.push_message(msg)
-            sleep(0.5)
-            self.sender.send_message()
+            msg = self.outgoing_queue.get()
+            self.socket.send(msg.to_string().encode())
 
     def __recv_loop(self):
         while True:
-            msg = self.receiver.pop_message()
-            while msg != None:
-                self.received_queue.push(msg)
-                msg = self.receiver.pop_message()
-            self.receiver.receive_message()
-            pass
+            data = self.socket.recv(1024)
+            self.received_queue.put(data.decode())
 
 if __name__ == '__main__':
     cl = Client()
