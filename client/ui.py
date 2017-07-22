@@ -33,13 +33,23 @@ class UI:
     def end_login(self):
         self.screen.clear()
 
-    def start_chat(self):        
-        self.input_win = SubWindowWrapper(self.screen, self.scr_height - 5, 8, self.scr_height - 3, self.scr_width - 8, 1)
-        self.output_win = SubWindowWrapper(self.screen, 1, self.input_win.ulx, self.input_win.uly - 3, self.input_win.lrx, 1)
+    def start_chat(self):
+        if self.scr_width >= 115:
+            self.input_win = SubWindowWrapper(self.screen, self.scr_height - 5, 8, self.scr_height - 3, self.scr_width - 30, 1)
+            self.output_win = SubWindowWrapper(self.screen, 1, self.input_win.ulx, self.input_win.uly - 3, self.input_win.lrx, 1)
+            self.info_win = SubWindowWrapper(self.screen, 1, self.output_win.lrx + 3, self.output_win.lry, self.scr_width - 3, 1)
+        else:
+            self.input_win = SubWindowWrapper(self.screen, self.scr_height - 5, 8, self.scr_height - 3, self.scr_width - 8, 1)
+            self.output_win = SubWindowWrapper(self.screen, 1, self.input_win.ulx, self.input_win.uly - 3, self.input_win.lrx, 1)
+            self.info_win = None
+
         self.screen.addstr(self.input_win.uly, 1, 'Input:')
         self.screen.addstr(self.output_win.uly, 1, 'Chat: ')
+        
         self.input_box = ExTextbox(self.input_win.win)
         self.output_box = ExTextbox(self.output_win.win, True)
+        if self.info_win:
+            self.info_box = ExTextbox(self.info_win.win, True)
         self.input_thread = threading.Thread(None, self._input_loop)
         self.input_thread.start()
 
@@ -48,7 +58,6 @@ class UI:
             self.screen.refresh()
 
     #empties the outgoing queue contents into a list
-    #max 10 items will be returned in one call
     def get_outgoing(self):
         out_list = []
         try:
@@ -207,7 +216,7 @@ class SubWindowWrapper:
         self.uly = uly
         self.lrx = lrx
         self.lry = lry
-        self._parentWin = parent_win
+        self.__parentWin = parent_win
         self.height = lry - uly
         self.width = lrx - ulx
         self.win = parent_win.subwin(self.height, self.width, uly, ulx)
@@ -218,12 +227,12 @@ class SubWindowWrapper:
                 pass
 
     def get_parent(self):
-        return self._parentWin
+        return self.__parentWin
 
     def focus(self):
         y, x = self.win.getyx()
-        self._parentWin.move(y + self.uly, x + self.ulx)
-        self._parentWin.refresh()
+        self.__parentWin.move(y + self.uly, x + self.ulx)
+        self.__parentWin.refresh()
 
     def clear(self):
         self.win.clear()
