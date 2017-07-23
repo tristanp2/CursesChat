@@ -3,7 +3,7 @@ import threading
 import message
 import queue
 from datetime import datetime
-from message_type import MessageType
+from message_type_client import MessageType
 from message import Message
 from curses.textpad import Textbox, rectangle
 
@@ -51,7 +51,24 @@ class UI:
         if self.info_win:
             self.info_box = ExTextbox(self.info_win.win, True)
         self.input_thread = threading.Thread(None, self._input_loop)
+        self.input_thread.setDaemon(True)
         self.input_thread.start()
+    
+    def do_exit(self, msg = None):
+        if msg:
+            self.screen.clear()
+            self.screen.addstr(1,1,'Exiting because: {}'.format(msg))
+            self.refresh_screen()
+            wait = 5
+            while wait > 0:
+                self.screen.addstr(2,1,str(wait))
+                self.refresh_screen()
+                wait -= 1
+                curses.napms(1000)
+                
+        self.screen.clear()
+        self.refresh_screen()
+        curses.endwin()
 
     def refresh_screen(self):
         if self.screen.is_wintouched():
@@ -92,6 +109,8 @@ class UI:
         if written:
             self.input_win.focus()
 
+    #does operation corresponding to message type
+    #can return none or string depending on op
     def process_message(self, msg):
         type = msg.get_type()
         if type == MessageType.chat_message:
@@ -118,16 +137,18 @@ class UI:
         msg = None
         if(trimmed[0] == '/'):
             args = trimmed.split(' ')
-            if len(args) >= 2:
+            if len(args) >= 1:
                 try:
-                    temp = ar
                     cmd_val = MessageType[args[0][1:]]
                 except:
                     pass
                 else:
                     mtype = cmd_val
                     time = None
-                    payload = ' '.join(args[1:])
+                    if len(args) >= 2:
+                        payload = ' '.join(args[1:])
+                    else:
+                        payload = ''
                     msg = Message(mtype, payload, time)
         else:
             msg = Message(MessageType.chat_message, trimmed, None)
@@ -146,7 +167,7 @@ class ExTextbox(Textbox):
         return result
 
     def edit(self):
-        #hack to make textbox return on enter press
+        #hackish to make textbox return on enter press
         def exit_on_enter(ch):
             if ch == curses.ascii.NL:
                 return curses.ascii.BEL
@@ -182,7 +203,7 @@ class ExTextbox(Textbox):
                 y += 1
         self.win.refresh()
 
-    def put_str(self, string):
+    def put_str(self, string, newline = True):
         y, x = self.win.getyx()
         if self._scroll and y == self.maxy:
             if not self._reached_bottom:
@@ -195,7 +216,8 @@ class ExTextbox(Textbox):
             if ch == '\n':
                 continue
             self._insert_printable_char(ch)
-        self._insert_printable_char(curses.ascii.NL)
+        if(newline):
+            self._insert_printable_char(curses.ascii.NL)
         self.win.refresh()
 
     def focus_cursor(self):
