@@ -1,11 +1,8 @@
 import socket
-import select
 import sys
-from .send_message_handler import SendMessageHandler
-from .receive_message_handler import ReceiveMessageHandler
-from .client import Client
-from .chatroom import Chatroom
-from .command_controller import CMDcontroller
+from client import Client
+from chatroom import Chatroom
+from command_controller import CMDcontroller
 
 class Server:
 
@@ -21,8 +18,8 @@ class Server:
         #id can be related to the client
         self.client = {}
         self.connected_client_socket = []
-        self.send_MSGHandler = SendMessageHandler(self.socket)
-        self.receive_MSGHandler = ReceiveMessageHandler(self.socket)
+        #self.send_MSGHandler = SendMessageHandler(self.socket)
+        #self.receive_MSGHandler = ReceiveMessageHandler(self.socket)
         self.CMDController = CMDcontroller()
 
         self.socket.bind(self.get_adrs())
@@ -36,12 +33,13 @@ class Server:
         for socket in List:
             if socket != self.socket:
                 try:
+                    print(message)
                     socket.send(message.encode())
                 except OSError as err:
                     print('OS error: {0}'.format(err))
                     print(socket)
-                    socket.close()
-                    List.remove(socket)
+                    #socket.close()
+                   # List.remove(socket)
 
     def process_incoming_con(self, socket):
         pass

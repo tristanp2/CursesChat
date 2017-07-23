@@ -1,5 +1,5 @@
-from .chatroom import Chatroom
-from .message import Message
+from chatroom import Chatroom
+from message import Message
 
 class CMDcontroller:
 

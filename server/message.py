@@ -1,5 +1,5 @@
 from datetime import datetime
-from .message_type import MessageType
+from message_type import MessageType
 
 class Message:
 
