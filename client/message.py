@@ -4,5 +4,4 @@ class Message:
     _timestamp = datetime().time
 
     def create_message(type, payload, timestamp):
-
-    def __init__(self):
+        pass

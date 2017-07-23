@@ -1,6 +1,6 @@
 import socket
-from .messenger import Messenger
-from .message_handler import MessageHandler
+from messenger import Messenger
+from message_handler import MessageHandler
 
 # from enum import Enum
 # from datetime import datetime.time

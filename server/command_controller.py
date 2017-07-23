@@ -1,10 +1,11 @@
-from .chatroom import Chatroom
-from .message import Message
+from chatroom import Chatroom
+from message import Message
 
 class CMDcontroller:
 
     def __init__(self):
-        self.chatroom = Chatroom()
+        pass
+    #    self.chatroom = Chatroom()
 
     def isPermitted(self, client):
         pass
@@ -24,13 +25,7 @@ class CMDcontroller:
 
 
     def proccessCMD(self, command):
-        args = command.split(' ')
-        alias = args[0]
-        #type = MessageType(int(args[1]))
-        #t = datetime.now()
-        #str_t = t.strftime('%H%M%S')
-        #time = datetime.strptime(args[2], )
-        payload = args[2:]
+        pass
 
         #TODO: parse the message
 

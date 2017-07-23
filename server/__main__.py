@@ -6,14 +6,13 @@ from .server import *
 hostname = str(socket.gethostbyname(socket.gethostname()))
 port = 10000
 idcounter = 0
-freeid = 1001
+freeid = 1000
 sendQ = 0
 receiveQ = 0
 CMDController = 0#CMDController()#need the class
 
-#__int__(self, hostname, port, idcounter, freeid, sendQ, receiveQ, CMDController)
-
 mainserver = Server(hostname, port, idcounter, freeid, sendQ, receiveQ, CMDController)
+mainserver.start()
 
 print('Current server ip is ' + hostname)
 
@@ -26,10 +25,11 @@ while True:
         if sock == mainserver.socket:
             connection, client_adrs = mainserver.socket.accept()
             mainserver.connected_client_socket.append(connection)
-            #welcome the new user
-            #TODO: need to parse this message, remember, recv will block in here
+            cid = mainserver.get_free_id()
+            client = Client(cid, connection)
+            mainserver.client[connection] = client
             print('Client {!r} connected'.format(client_adrs))
-            #TODO: broadcast alias not this
+            #TODO: broadcast alias not this, but how can I get alias
             #mainserver.broadcast_data(connection, '{!r} entered chatroom'.format(client_adrs) , mainserver.connected_client_socket)
 
         else:
