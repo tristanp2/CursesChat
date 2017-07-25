@@ -47,9 +47,8 @@ class Client:
                 self.ui.update_chat()
                 sleep(0.2)
         except OSError:
-            self.__set_exit('exception in main loop')
-        self.__exit()
-        sys.exit(0)
+            self.__set_exit('Exception in main loop')
+        self.ui.do_exit(self.exit_msg)
 
     def __set_exit(self, msg = None):
         self.exit_lock.acquire()
@@ -63,7 +62,7 @@ class Client:
                 msg = self.outgoing_queue.get()
                 self.socket.send(msg.to_string().encode())
         except OSError:
-            self.__set_exit('exception in send loop')
+            self.__set_exit('Networking exception')
 
     def __recv_loop(self):
         try:
@@ -71,10 +70,7 @@ class Client:
                 data = self.socket.recv(1024)
                 self.received_queue.put(data.decode())
         except OSError:
-            self.__set_exit('exception in recv loop')
-
-    def __exit(self):
-        self.ui.do_exit(self.exit_msg)
+            self.__set_exit('Networking exception')
 
 if __name__ == '__main__':
     cl = Client()

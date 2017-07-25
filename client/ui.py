@@ -178,11 +178,6 @@ class ExTextbox(Textbox):
             self._shift_up()
         super().edit(exit_on_enter)
 
-    def color_region(self, lx, rx, y, color):
-        for x in range(lx, rx):
-            ch = self.win.inch(y, x)
-            self.win.addch(y, x, ch, color)
-        self.win.refresh()
     def _shift_up(self):
         y, x = 1, 0
         while y < self.maxx:
