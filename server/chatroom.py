@@ -6,7 +6,7 @@ class Chatroom:
         self.name = name
         # key as cid and value as alias
         self.moderator = {}
-        self.client = {}
+        self.client = []
 
     #return true if client exist in chatroom instance
     def check_client(self, cid):
@@ -16,12 +16,11 @@ class Chatroom:
         else:
             return True
 
-    #return dictionary
-    def get_client_list(self):
+    def get_cid_list(self):
         return self.client
 
-    def add_client(self, cid, alias):
-        self.client[cid] = alias
+    def add_client(self, cid):
+        self.client.append(cid)
 
     def remove_client(self, cid):
-        del self.client[cid]
+        self.client.remove(cid)

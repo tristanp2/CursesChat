@@ -2,6 +2,7 @@
 #https://pymotw.com/3/socket/tcp.html
 #run it with -m server on seng299 folder
 from server import Server
+from client import Client
 import select
 import socket
 
@@ -28,8 +29,16 @@ while True:
             connection, client_adrs = mainserver.socket.accept()
             mainserver.connected_client_socket.append(connection)
             cid = mainserver.get_free_id()
-            client = Client(cid, connection)
-            mainserver.client[connection] = client
+            if cid == -1:
+                print('reach maximum amount of user the server can handle')
+            client = Client(cid, 1, connection)
+            #socket: cid
+            mainserver.client_sock_to_cid[connection] = cid
+            #cid: socket
+            mainserver.client_cid_to_sock[cid] = connection
+            #cid: Client
+            mainserver.client_cid_to_client[cid] = client
+            mainserver.chatroom[1].add_client(cid)
             print('Client {!r} connected'.format(client_adrs))
             #TODO: broadcast alias not this, but how can I get alias
             #mainserver.broadcast_data(connection, '{!r} entered chatroom'.format(client_adrs) , mainserver.connected_client_socket)
@@ -42,32 +51,22 @@ while True:
                 #print('after recv')
                 if data:
                     msg = mainserver.CMDController.parse_input(data.decode())
+                    client_id = mainserver.client_sock_to_cid[sock]
+                    client = mainserver.client_cid_to_client[client_id]
+                    current_chatroom = mainserver.chatroom[client.get_chatroom_id()]
+                    filtered_list = [mainserver.client_cid_to_sock[k] for k in current_chatroom.get_cid_list()]
                     #message format should be: alias type time data
-                    mainserver.broadcast_data(sock ,'{} {} {} {}'.format(msg.alias, msg.type.value, msg.timestamp, msg.payload) ,mainserver.connected_client_socket)
+                    mainserver.broadcast_data(sock ,'{} {} {} {}'.format(msg.alias, msg.type.value, msg.timestamp, msg.payload) ,filtered_list)
             except OSError as err:
                 print('OS error: {0}'.format(err))
                 print('Client {} is offline'.format(sock.getpeername))
                 sock.close()
                 mainserver.connected_client_socket.remove(sock)
+                temp_cid = mainserver.client_sock_to_cid[sock]
+                del mainserver.client_sock_to_cid[sock]
+                del mainserver.client_cid_to_sock[temp_cid]
+                del mainserver.client_cid_to_client[temp_cid]
+                mainserver.freeup_cid(temp_cid)
                 continue
 
 mainserver.shutdown(mainserver.socket)
-
-"""
-    try:
-        print('connection from', client_adrs)
-
-        while True:
-            #receving 16 bytes of data
-            stringdata = connection.recv(1024)
-            print('received {!r}'.format(stringdata))
-            if stringdata:
-                print('sending data back to the client')
-                connection.sendall(stringdata)
-            else:
-                print('no data from', client_adrs)
-                break
-
-    finally:
-        connection.close()
-"""

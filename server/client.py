@@ -1,10 +1,14 @@
 class Client:
 
-    def __init__(self, cid, socket):
+    def __init__(self, cid, chatroomid, socket):
         self.id = cid
         self.aliasname = ''
+        self.chatroomid = chatroomid
         self.chatroom = ''
         self.socket = socket
+
+    def get_chatroom_id(self):
+        return self.chatroomid
 
     def get_cid(self):
         return self.id
