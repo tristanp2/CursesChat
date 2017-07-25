@@ -13,3 +13,4 @@ class MessageType(Enum):
     start_server = 11
     stop_server = 12
     quit = 13
+    chatroom_update = 14
