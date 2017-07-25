@@ -4,6 +4,7 @@ import queue
 from ui import UI
 import threading
 from message_type_client import MessageType
+from message_client import Message
 from time import sleep
 
 class Client:
@@ -16,6 +17,7 @@ class Client:
         self.ui = UI()
         self.exit_lock = threading.Lock()
         self.exit = False
+        self.login_message = Message(MessageType.login,'',None, None)
 
         self.send_thread = threading.Thread(None, self.__send_loop, 'send_t')
         self.send_thread.setDaemon(True)
@@ -24,8 +26,10 @@ class Client:
 
     def main_loop(self):
         self.alias = self.ui.start_login(self.server_adrs[0])
+        self.login_message.set_alias(self.alias)
         try:
             self.socket.connect(self.server_adrs)
+            self.socket.send(self.login_message.to_string().encode())
             self.ui.end_login()
             self.send_thread.start()
             self.recv_thread.start()
