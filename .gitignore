@@ -99,3 +99,5 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+seng299\.pyproj
