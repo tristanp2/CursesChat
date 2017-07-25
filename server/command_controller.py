@@ -16,17 +16,6 @@ class CMDcontroller:
     #alias messagetype payload
     #tristan 1 how are you
 
-    def parse_input(self, message):
-        args = message.split(' ')
-        alias = args[0]
-        type = args[1]
-        payload = args[2:]
-        #TODO: add cid as first parameter
-        msg = Message(alias, type, payload)
-        #TODO: push to receive queue, so we dont need to return msg
-        return msg
-
-
     def process_message(self, msg):
         type = msg.type
 
