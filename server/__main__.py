@@ -50,7 +50,7 @@ while True:
                 data = sock.recv(1024)
                 #print('after recv')
                 if data:
-                    msg = mainserver.CMDController.parse_input(data.decode())
+                    msg = mainserver.controller.parse_input(data.decode())
                     client_id = mainserver.client_sock_to_cid[sock]
                     client = mainserver.client_cid_to_client[client_id]
                     current_chatroom = mainserver.chatroom[client.get_chatroom()]
