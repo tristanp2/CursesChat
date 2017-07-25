@@ -31,7 +31,7 @@ while True:
             cid = mainserver.get_free_id()
             if cid == -1:
                 print('reach maximum amount of user the server can handle')
-            client = Client(cid, 1, connection)
+            client = Client(cid, 'main_chatroom', connection)
             #socket: cid
             mainserver.client_sock_to_cid[connection] = cid
             #cid: socket
@@ -63,6 +63,9 @@ while True:
                 sock.close()
                 mainserver.connected_client_socket.remove(sock)
                 temp_cid = mainserver.client_sock_to_cid[sock]
+                temp_client = mainserver.client_cid_to_client[temp_cid]
+                temp_chatroom = mainserver.chatroom[temp_client.get_chatroom()]
+                temp_chatroom.remove_client(temp_cid)
                 del mainserver.client_sock_to_cid[sock]
                 del mainserver.client_cid_to_sock[temp_cid]
                 del mainserver.client_cid_to_client[temp_cid]
