@@ -1,7 +1,9 @@
 import socket
+import select
 import sys
 from client import Client
 from chatroom import Chatroom
+from message import Message
 from command_controller import CMDcontroller
 import queue
 
@@ -76,3 +78,71 @@ class Server:
 
     def shutdown(self, socket):
         socket.close()
+
+
+    def parse_input(self, message, sock):
+        cid = self.client_sock_to_cid[sock]
+        args = message.split(' ')
+        alias = args[0]
+        type = args[1]
+        payload = args[2:]
+        #TODO: add cid as first parameter
+        msg = Message(cid, alias, type, payload)
+        #TODO: push to receive queue, so we dont need to return msg
+        return msg
+
+    def main_loop(self):
+        while True:
+
+            read_sockets, write_sockets, error_sockets = select.select(self.connected_client_socket, [], [])
+
+            for sock in read_sockets:
+                # getting new client connection
+                if sock == self.socket:
+                    connection, client_adrs = self.socket.accept()
+                    self.connected_client_socket.append(connection)
+                    cid = self.get_free_id()
+                    if cid == -1:
+                        print('reach maximum amount of user the server can handle')
+                    client = Client(cid, 'main_chatroom', connection)
+                    # socket: cid
+                    self.client_sock_to_cid[connection] = cid
+                    # cid: socket
+                    self.client_cid_to_sock[cid] = connection
+                    # cid: Client
+                    self.client_cid_to_client[cid] = client
+                    self.chatroom['main_chatroom'].add_client(cid)
+                    print('Client {!r} connected'.format(client_adrs))
+                    # TODO: broadcast alias not this, but how can I get alias
+                    # self.broadcast_data(connection, '{!r} entered chatroom'.format(client_adrs) , self.connected_client_socket)
+
+                else:
+                    # print('enter else')
+                    try:
+                        # print('before recv')
+                        data = sock.recv(1024)
+                        # print('after recv')
+                        if data:
+                            msg = self.parse_input(data.decode(), sock)
+                            client_id = self.client_sock_to_cid[sock]
+                            client = self.client_cid_to_client[client_id]
+                            current_chatroom = self.chatroom[client.get_chatroom()]
+                            filtered_list = [self.client_cid_to_sock[k] for k in current_chatroom.get_cid_list()]
+                            # message format should be: alias type time data
+                            self.broadcast_data(sock,
+                                                      '{} {} {} {}'.format(msg.alias, msg.type.value, msg.timestamp,
+                                                                           msg.payload), filtered_list)
+                    except OSError as err:
+                        print('OS error: {0}'.format(err))
+                        print('Client {} is offline'.format(sock.getpeername()))
+                        sock.close()
+                        self.connected_client_socket.remove(sock)
+                        temp_cid = self.client_sock_to_cid[sock]
+                        temp_client = self.client_cid_to_client[temp_cid]
+                        temp_chatroom = self.chatroom[temp_client.get_chatroom()]
+                        temp_chatroom.remove_client(temp_cid)
+                        del self.client_sock_to_cid[sock]
+                        del self.client_cid_to_sock[temp_cid]
+                        del self.client_cid_to_client[temp_cid]
+                        self.freeup_cid(temp_cid)
+                        continue
