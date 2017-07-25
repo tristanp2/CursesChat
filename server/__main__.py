@@ -59,7 +59,7 @@ while True:
                     mainserver.broadcast_data(sock ,'{} {} {} {}'.format(msg.alias, msg.type.value, msg.timestamp, msg.payload) ,filtered_list)
             except OSError as err:
                 print('OS error: {0}'.format(err))
-                print('Client {} is offline'.format(sock.getpeername))
+                print('Client {} is offline'.format(sock.getpeername()))
                 sock.close()
                 mainserver.connected_client_socket.remove(sock)
                 temp_cid = mainserver.client_sock_to_cid[sock]

@@ -11,7 +11,7 @@ class Client:
     def __init__(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         #asumming the server is localhost and port is 10000
-        self.server_adrs = ('134.87.170.182', 10000)
+        self.server_adrs = ('134.87.133.12', 10000)
         self.received_queue = queue.Queue()
         self.outgoing_queue = queue.Queue()
         self.ui = UI()

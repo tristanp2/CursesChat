@@ -31,41 +31,56 @@ class CMDcontroller:
 
         #TODO: push it to the recieve queue
 
-        def login(arg):
-            pass
+    def login(self, name, client):
+        client.set_alias(name)
 
-        def logout(arg):
-            pass
+    def logout(self):
+        pass
 
-        def list_cmd():
-            # print options.values()?
-            pass
+    def list_cmd(self):
+        # print options.values()?
+        pass
 
-        def leave_chatroom(arg):
-            pass
-
-        def start_server(arg):
-            pass
-
-        def stop_server(arg):
-            pass
-
-        def join_chatroom(arg):
-            pass
-
-        def create_chatroom(arg):
-            name = arg
+    def leave_chatroom(self, client, chatroom_list):
+        #client can't leave main chatroom
+        if client.get_chatroom() == 'main_chatroom':
+            return False
+        #if client is creator
+        lonely_chatroom = client.get_chatroom
+        if client == chatroom_list[lonely_chatroom].get_moderator():
+            #kick everyone out
+            abandoned_crying_babies = chatroom_list[lonely_chatroom].get_cid_list()
+            chatroom_list['main_chatroom'].add_client_list(abandoned_crying_babies)
 
 
-        def delete_chatroom(arg):
-            pass
 
-        def set_alias(arg):
-            pass
+        #if client is not creator
+        client.set_chatroom('main_chatroom')
 
-        def block_user(arg):
-            pass
+    def start_server(self):
+        pass
 
-        def unblock_user(arg):
-            pass
+    def stop_server(self):
+        pass
+
+    def join_chatroom(self):
+        pass
+
+
+    def create_chatroom(self, name, client, chatroom_dict):
+        chatroom_dict[name] = Chatroom(name)
+        chatroom_dict.set_moderator(client)
+        chatroom_dict.add_client(client.get_cid())
+
+    def delete_chatroom(self):
+        pass
+
+    def set_alias(self):
+        pass
+
+    def block_user(self):
+        pass
+
+    def unblock_user(self):
+        pass
 

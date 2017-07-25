@@ -2,10 +2,9 @@ from client import Client
 
 class Chatroom:
 
-    def __init__(self, name):
+    def __init__(self, name, creator = None):
         self.name = name
-        # key as cid and value as alias
-        self.moderator = {}
+        self.moderator = creator
         self.client = []
 
     #return true if client exist in chatroom instance
@@ -22,8 +21,17 @@ class Chatroom:
     def get_cid_list(self):
         return self.client
 
+    def set_moderator(self, client):
+        self.moderator = client
+
+    def get_moderator(self):
+        return self.moderator
+
     def add_client(self, cid):
         self.client.append(cid)
+
+    def add_client_list(self, cid_list):
+        self.client.extend(cid_list)
 
     def remove_client(self, cid):
         self.client.remove(cid)
