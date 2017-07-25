@@ -6,7 +6,7 @@ class Message:
     #TODO: add cid
     #note: it does not handle type for now
     #TODO: will take away alias eventually
-    def __init__(self ,cid ,alias, type, payload):
+    def __init__(self, cid, alias, type, payload):
         self.cid = cid
         self.alias = alias
         self.type = MessageType(int(type))
