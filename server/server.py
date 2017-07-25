@@ -3,6 +3,7 @@ import sys
 from client import Client
 from chatroom import Chatroom
 from command_controller import CMDcontroller
+import queue
 
 class Server:
 
@@ -21,6 +22,8 @@ class Server:
         self.client_cid_to_client = {}
         self.chatroom = {}
         self.connected_client_socket = []
+        send_queue = queue.Queue()
+        receive_queue = queue.Queue()
         #self.send_MSGHandler = SendMessageHandler(self.socket)
         #self.receive_MSGHandler = ReceiveMessageHandler(self.socket)
         self.controller = CMDcontroller(self.client_cid_to_client, self.chatroom)
