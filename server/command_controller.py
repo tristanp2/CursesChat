@@ -1,10 +1,13 @@
 from chatroom import Chatroom
 from message import Message
+from message_type import MessageType
 
 class CMDcontroller:
 
-    def __init__(self):
-        pass
+    def __init__(self, client_dict, chatroom_dict):
+        self.chatroom_dict = chatroom_dict
+        self.client_dict = client_dict
+        self.outgoing_list = []
     #    self.chatroom = Chatroom()
 
     def isPermitted(self, client):
@@ -24,12 +27,33 @@ class CMDcontroller:
         return msg
 
 
-    def proccessCMD(self, command):
-        pass
+    def process_message(self, msg):
+        type = msg.type
 
-        #TODO: parse the message
+        if type == MessageType.alias:
+            pass
+        elif type == MessageType.block:
+            self.block_user()
+        elif type == MessageType.create:
+            client = msg.alias
+            name = msg.payload
+            self.create_chatroom(name,client)
+        elif type == MessageType.delete:
+            self.delete_chatroom()
+        elif type == MessageType.join:
+            self.join_chatroom()
+        elif type == MessageType.leave:
+            client = self.client_dict[msg.cid]
+            self.leave_chatroom(client)
+        elif type == MessageType.help:
+            self.help(self.client_dict[msg.cid])
+        elif type == MessageType.login:
+            self.login(msg.alias, client)
 
-        #TODO: push it to the recieve queue
+    def get_outgoing(self):
+        outgoing_copy = self.outgoing_list.copy()
+        self.outgoing_list.clear()
+        return outgoing_copy
 
     def login(self, name, client):
         client.set_alias(name)
@@ -37,16 +61,23 @@ class CMDcontroller:
     def logout(self):
         pass
 
-    def list_cmd(self):
+    def help(self, client):
         # print options.values()?
-        pass
+        help_list = []
+        restricted = [MessageType.chat_message.name, MessageType.chatroom_update.name, MessageType.start_server.name, MessageType.stop_server.name]
+        for value in MessageType:
+            if value.name not in restricted:
+                help_list.append(value.name)
+        payload = ' '.join(help_list)
+        msg = Message(client.alias, MessageType.help, payload)
+        self.outgoing_list.append(msg)
 
     def leave_chatroom(self, client, chatroom_list):
         #client can't leave main chatroom
         if client.get_chatroom() == 'main_chatroom':
             return False
         #if client is creator
-        lonely_chatroom = client.get_chatroom
+        lonely_chatroom = client.get_chatroom()
         if client == chatroom_list[lonely_chatroom].get_moderator():
             #kick everyone out
             abandoned_crying_babies = chatroom_list[lonely_chatroom].get_cid_list()
@@ -67,7 +98,7 @@ class CMDcontroller:
         pass
 
 
-    def create_chatroom(self, name, client, chatroom_dict):
+    def create_chatroom(self, name, client):
         chatroom_dict[name] = Chatroom(name)
         chatroom_dict.set_moderator(client)
         chatroom_dict.add_client(client.get_cid())

@@ -23,7 +23,7 @@ class Server:
         self.connected_client_socket = []
         #self.send_MSGHandler = SendMessageHandler(self.socket)
         #self.receive_MSGHandler = ReceiveMessageHandler(self.socket)
-        self.CMDController = CMDcontroller()
+        self.controller = CMDcontroller(self.client_cid_to_client, self.chatroom)
 
     def start(self):
         self.socket.bind(self.get_adrs())
