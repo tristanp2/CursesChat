@@ -1,10 +1,9 @@
 import curses
 import threading
-import message
 import queue
 from datetime import datetime
 from message_type_client import MessageType
-from message import Message
+from message_client import Message
 from curses.textpad import Textbox, rectangle
 
 class UI:
@@ -37,11 +36,13 @@ class UI:
         if self.scr_width >= 115:
             self.input_win = SubWindowWrapper(self.screen, self.scr_height - 5, 8, self.scr_height - 3, self.scr_width - 30, 1)
             self.output_win = SubWindowWrapper(self.screen, 1, self.input_win.ulx, self.input_win.uly - 3, self.input_win.lrx, 1)
-            self.info_win = SubWindowWrapper(self.screen, 1, self.output_win.lrx + 3, self.output_win.lry, self.scr_width - 3, 1)
+            self.info_win = SubWindowWrapper(self.screen, 3, self.output_win.lrx + 3, self.output_win.lry, self.scr_width - 3, 1)
+            self.cname_win = SubWindowWrapper(self.screen, self.info_win.uly - 2, self.info_win.ulx, self.info_win.uly - 2, self.info_win.lrx)
         else:
             self.input_win = SubWindowWrapper(self.screen, self.scr_height - 5, 8, self.scr_height - 3, self.scr_width - 8, 1)
             self.output_win = SubWindowWrapper(self.screen, 1, self.input_win.ulx, self.input_win.uly - 3, self.input_win.lrx, 1)
             self.info_win = None
+            self.cname_win = None
 
         self.screen.addstr(self.input_win.uly, 1, 'Input:')
         self.screen.addstr(self.output_win.uly, 1, 'Chat: ')
@@ -50,6 +51,9 @@ class UI:
         self.output_box = ExTextbox(self.output_win.win, True)
         if self.info_win:
             self.info_box = ExTextbox(self.info_win.win, True)
+        if self.cname_win:
+            self.cname_box = ExTextbox(self.cname_win.win, False)
+            self.cname_box.put_str('Global:')
         self.input_thread = threading.Thread(None, self._input_loop)
         self.input_thread.setDaemon(True)
         self.input_thread.start()
@@ -116,6 +120,16 @@ class UI:
         if type == MessageType.chat_message:
             string = '{}<{}>: {}'.format(msg.get_alias(), msg.get_time().strftime(self.time_format), msg.get_payload())
             return string
+        elif type == MessageType.chatroom_update:
+            #payload should be 'chatroom client1 client2....'
+            if info_win:
+                payload_list = msg.get_payload().split(' ')
+                self.cname_box.clear()
+                self.cname_box.put_str(payload_list[0], False)
+                payload_list = payload_list[1:]
+                self.info_box.clear()
+                for name in payload_list:
+                    self.info_box.put_str(name)
         else:
             pass
     
@@ -154,7 +168,9 @@ class UI:
             msg = Message(MessageType.chat_message, trimmed, None)
         return msg
 
-
+#Extended / hacked together version of the textbox included with python curses
+#Added ability to scroll down and insert lines of text
+#The enter key returns out of edit mode rather than ctrl-g in the original
 class ExTextbox(Textbox):
     def __init__(self, win, scroll = False, insert_mode=False):
         super().__init__(win, insert_mode)
