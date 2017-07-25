@@ -16,6 +16,9 @@ class Chatroom:
         else:
             return True
 
+    def get_name(self):
+        return self.name
+
     def get_cid_list(self):
         return self.client
 

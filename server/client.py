@@ -1,23 +1,19 @@
 class Client:
 
-    def __init__(self, cid, chatroomid, socket):
+    def __init__(self, cid, chatroom, socket):
         self.id = cid
         self.aliasname = ''
-        self.chatroomid = chatroomid
-        self.chatroom = ''
+        self.chatroom = chatroom
         self.socket = socket
 
-    def get_chatroom_id(self):
-        return self.chatroomid
+    def get_chatroom(self):
+        return self.chatroom
 
     def get_cid(self):
         return self.id
 
     def get_alias(self):
         return self.aliasname
-
-    def get_clientinchatroom(self):
-        return self.chatroom
 
     #question: does it makes sense to do it in here?
     def set_alias(self, alias):

@@ -31,4 +31,41 @@ class CMDcontroller:
 
         #TODO: push it to the recieve queue
 
+        def login(arg):
+            pass
+
+        def logout(arg):
+            pass
+
+        def list_cmd():
+            # print options.values()?
+            pass
+
+        def leave_chatroom(arg):
+            pass
+
+        def start_server(arg):
+            pass
+
+        def stop_server(arg):
+            pass
+
+        def join_chatroom(arg):
+            pass
+
+        def create_chatroom(arg):
+            name = arg
+
+
+        def delete_chatroom(arg):
+            pass
+
+        def set_alias(arg):
+            pass
+
+        def block_user(arg):
+            pass
+
+        def unblock_user(arg):
+            pass
 

@@ -38,7 +38,7 @@ while True:
             mainserver.client_cid_to_sock[cid] = connection
             #cid: Client
             mainserver.client_cid_to_client[cid] = client
-            mainserver.chatroom[1].add_client(cid)
+            mainserver.chatroom['main_chatroom'].add_client(cid)
             print('Client {!r} connected'.format(client_adrs))
             #TODO: broadcast alias not this, but how can I get alias
             #mainserver.broadcast_data(connection, '{!r} entered chatroom'.format(client_adrs) , mainserver.connected_client_socket)
@@ -53,7 +53,7 @@ while True:
                     msg = mainserver.CMDController.parse_input(data.decode())
                     client_id = mainserver.client_sock_to_cid[sock]
                     client = mainserver.client_cid_to_client[client_id]
-                    current_chatroom = mainserver.chatroom[client.get_chatroom_id()]
+                    current_chatroom = mainserver.chatroom[client.get_chatroom()]
                     filtered_list = [mainserver.client_cid_to_sock[k] for k in current_chatroom.get_cid_list()]
                     #message format should be: alias type time data
                     mainserver.broadcast_data(sock ,'{} {} {} {}'.format(msg.alias, msg.type.value, msg.timestamp, msg.payload) ,filtered_list)

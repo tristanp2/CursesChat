@@ -30,7 +30,7 @@ class Server:
         self.socket.listen(5)
         self.connected_client_socket.append(self.socket)
         chatroom = Chatroom("main_chatroom")
-        self.chatroom[1] = chatroom
+        self.chatroom[chatroom.get_name()] = chatroom
 
     def stop(self):
         pass
