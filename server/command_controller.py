@@ -72,21 +72,27 @@ class CMDcontroller:
         msg = Message(client.alias, MessageType.help, payload)
         self.outgoing_list.append(msg)
 
-    def leave_chatroom(self, client, chatroom_list):
+    def leave_chatroom(self, client, chatroom_dict, cid_to_sock_dict):
         #client can't leave main chatroom
         if client.get_chatroom() == 'main_chatroom':
-            return False
+            msg = Message(client.get_cid(), client.get_alias(), 1 ,"sorry you can not leave main chatroom")
+            outgoing_list.append(msg)
         #if client is creator
         lonely_chatroom = client.get_chatroom()
-        if client == chatroom_list[lonely_chatroom].get_moderator():
+        if client == chatroom_dict[lonely_chatroom].get_moderator():
             #kick everyone out
-            abandoned_crying_babies = chatroom_list[lonely_chatroom].get_cid_list()
-            chatroom_list['main_chatroom'].add_client_list(abandoned_crying_babies)
-
-
-
+            abandoned_crying_babies = chatroom_dict[lonely_chatroom].get_cid_list()
+            chatroom_dict['main_chatroom'].add_client_list(abandoned_crying_babies)
+            client_list = [cid_to_sock_dict[k] for k in abandoned_crying_babies()]
+            map(lambda x: x.set_chatroom('main_chatroom'), client_list)
+            del chatroom_dict[lonely_chatroom]
+            return True
         #if client is not creator
-        client.set_chatroom('main_chatroom')
+        else:
+            lonely_chatroom.remove_client(client.get_cid())
+            chatroom_dict['main_chatroom'].add_client(client.get_cid())
+            client.set_chatroom('main_chatroom')
+            return True
 
     def start_server(self):
         pass
