@@ -16,7 +16,7 @@ class UI:
         self.scr_height, self.scr_width = self.screen.getmaxyx()
         curses.noecho()
 
-    def start_login(self):
+    def start_login(self, address):
         login_win = SubWindowWrapper(self.screen, 1, 8, 2, self.scr_width)
         login_box = ExTextbox(login_win.win)
         self.screen.addstr(1,1, 'alias: ')
@@ -26,7 +26,7 @@ class UI:
         self.screen.clear()
         del login_box
         del login_win
-        self.screen.addstr(1,1, 'Attempting login...')
+        self.screen.addstr(1,1, 'Attempting to connect to: ' + address)
         self.screen.refresh()
         return alias
 
