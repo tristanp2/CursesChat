@@ -1,41 +1,28 @@
 from chatroom import Chatroom
 from message import Message
 from message_type import MessageType
+import queue
 
 class CMDcontroller:
 
     def __init__(self, client_dict, chatroom_dict):
         self.chatroom_dict = chatroom_dict
         self.client_dict = client_dict
-        self.outgoing_list = []
+        self.outgoing_queue = queue.Queue()
     #    self.chatroom = Chatroom()
 
     def isPermitted(self, client):
         pass
 
-    #alias messagetype payload
-    #tristan 1 how are you
-
-    def parse_input(self, message):
-        args = message.split(' ')
-        alias = args[0]
-        type = args[1]
-        payload = args[2:]
-        #TODO: add cid as first parameter
-        msg = Message(alias, type, payload)
-        #TODO: push to receive queue, so we dont need to return msg
-        return msg
-
-
     def process_message(self, msg):
         type = msg.type
+        client = self.client_dict[msg.cid]
 
         if type == MessageType.alias:
-            pass
+            self.set_alias(client, msg.payload)
         elif type == MessageType.block:
             self.block_user()
         elif type == MessageType.create:
-            client = msg.alias
             name = msg.payload
             self.create_chatroom(name,client)
         elif type == MessageType.delete:
@@ -43,20 +30,17 @@ class CMDcontroller:
         elif type == MessageType.join:
             self.join_chatroom()
         elif type == MessageType.leave:
-            client = self.client_dict[msg.cid]
             self.leave_chatroom(client)
         elif type == MessageType.help:
-            self.help(self.client_dict[msg.cid])
+            self.help(client)
         elif type == MessageType.login:
             self.login(msg.alias, client)
 
-    def get_outgoing(self):
-        outgoing_copy = self.outgoing_list.copy()
-        self.outgoing_list.clear()
-        return outgoing_copy
+    def pop_outgoing(self):
+        return self.outgoing_queue.get()
 
-    def login(self, name, client):
-        client.set_alias(name)
+    def login(self, alias, client):
+        client.set_alias(alias)
 
     def logout(self):
         pass
@@ -70,22 +54,22 @@ class CMDcontroller:
                 help_list.append(value.name)
         payload = ' '.join(help_list)
         msg = Message(client.alias, MessageType.help, payload)
-        self.outgoing_list.append(msg)
+        self.outgoing_queue.append(msg)
 
-    def leave_chatroom(self, client, chatroom_dict, cid_to_sock_dict):
+    def leave_chatroom(self, client, reply = False):
         #client can't leave main chatroom
-        if client.get_chatroom() == 'main_chatroom':
-            msg = Message(client.get_cid(), client.get_alias(), 1 ,"sorry you can not leave main chatroom")
+        if reply and client.get_chatroom() == 'main_chatroom':
+            msg = Message(client.get_cid(), client.get_alias(), MessageType.chat_message,"sorry you can not leave main chatroom")
             outgoing_list.append(msg)
         #if client is creator
         lonely_chatroom = client.get_chatroom()
-        if client == chatroom_dict[lonely_chatroom].get_moderator():
+        if client == self.chatroom_dict[lonely_chatroom].get_moderator():
             #kick everyone out
             abandoned_crying_babies = chatroom_dict[lonely_chatroom].get_cid_list()
             chatroom_dict['main_chatroom'].add_client_list(abandoned_crying_babies)
             client_list = [cid_to_sock_dict[k] for k in abandoned_crying_babies()]
             map(lambda x: x.set_chatroom('main_chatroom'), client_list)
-            del chatroom_dict[lonely_chatroom]
+            del self.chatroom_dict[lonely_chatroom]
             return True
         #if client is not creator
         else:
@@ -100,9 +84,22 @@ class CMDcontroller:
     def stop_server(self):
         pass
 
-    def join_chatroom(self):
-        pass
+    def join_chatroom(self, client, chatroom_name):
+        old_chatroom = self.chatroom_dict[client.get_chatroom()]
+        self.leave_chatroom(client)
+        chatroom = self.chatroom_dict[chatroom_name]
+        chatroom.add_client(client.get_cid())
+        client.set_chatroom(chatroom.get_name())
+        self.__do_chatroom_update(chatroom)
+        self.__do_chatroom_update(old_chatroom)
 
+    #Creates and pushes update messages for everyone in chatroom   
+    def __do_chatroom_update(self, chatroom):
+        payload = chatroom.get_name() + ' ' + ' '.join(chatroom.client)
+        for cid in chatroom.client:
+            cli = self.client_dict[cid]
+            msg = Message(cli.get_cid(), cli.get_alias(), MessageType.chatroom_update, payload)
+            self.outgoing_queue.put(msg)
 
     def create_chatroom(self, name, client):
         chatroom_dict[name] = Chatroom(name)
@@ -112,8 +109,8 @@ class CMDcontroller:
     def delete_chatroom(self):
         pass
 
-    def set_alias(self):
-        pass
+    def set_alias(self, client, alias):
+        client.set_alias(alias)
 
     def block_user(self):
         pass
