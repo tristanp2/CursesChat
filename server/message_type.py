@@ -4,7 +4,7 @@ class MessageType(Enum):
     chat_message = 1
     alias = 2
     block = 3
-    listcmd = 4
+    list_cmd = 4 #This is equivalent to a "/help" command
     login = 5
     logout = 6
     create = 7

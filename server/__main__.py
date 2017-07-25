@@ -1,7 +1,9 @@
 #reference
 #https://pymotw.com/3/socket/tcp.html
 #run it with -m server on seng299 folder
-from .server import *
+from server import Server
+import select
+import socket
 
 hostname = str(socket.gethostbyname(socket.gethostname()))
 port = 10000
@@ -44,7 +46,6 @@ while True:
                     mainserver.broadcast_data(sock ,'{} {} {} {}'.format(msg.alias, msg.type.value, msg.timestamp, msg.payload) ,mainserver.connected_client_socket)
             except OSError as err:
                 print('OS error: {0}'.format(err))
-                mainserver.broadcast_data(sock ,'Client {} is offline'.format(sock.getpeername()) ,mainserver.connected_client_socket)
                 print('Client {} is offline'.format(sock.getpeername))
                 sock.close()
                 mainserver.connected_client_socket.remove(sock)
