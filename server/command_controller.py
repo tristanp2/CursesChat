@@ -44,24 +44,32 @@ class CMDcontroller:
     def leave_chatroom(self, client, chatroom_dict, cid_to_sock_dict):
         #client can't leave main chatroom
         if client.get_chatroom() == 'main_chatroom':
-            msg = Message(client.get_cid(), client.get_alias(), 1 ,"sorry you can not leave main chatroom")
+            m = "sorry you can not leave main chatroom"
+            msg = Message(client.get_cid(), client.get_alias(), 10, m)
             outgoing_list.append(msg)
-        #if client is creator
-        lonely_chatroom = client.get_chatroom()
-        if client == chatroom_dict[lonely_chatroom].get_moderator():
-            #kick everyone out
-            abandoned_crying_babies = chatroom_dict[lonely_chatroom].get_cid_list()
-            chatroom_dict['main_chatroom'].add_client_list(abandoned_crying_babies)
-            client_list = [cid_to_sock_dict[k] for k in abandoned_crying_babies()]
-            map(lambda x: x.set_chatroom('main_chatroom'), client_list)
-            del chatroom_dict[lonely_chatroom]
-            return True
-        #if client is not creator
         else:
-            lonely_chatroom.remove_client(client.get_cid())
-            chatroom_dict['main_chatroom'].add_client(client.get_cid())
-            client.set_chatroom('main_chatroom')
-            return True
+            #if client is creator
+            lonely_chatroom = client.get_chatroom()
+            if client == chatroom_dict[lonely_chatroom].get_moderator():
+                #kick everyone out
+                abandoned_crying_babies = chatroom_dict[lonely_chatroom].get_cid_list()
+                chatroom_dict['main_chatroom'].add_client_list(abandoned_crying_babies)
+                client_list = [cid_to_sock_dict[k] for k in abandoned_crying_babies()]
+                map(lambda x: x.set_chatroom('main_chatroom'), client_list)
+                del chatroom_dict[lonely_chatroom]
+                for c in client_list:
+                    m = "{} left {} and join main_chatroom".format(c.get_alias(), lonely_chatroom)
+                    msg = Message(client.get_cid(), client.get_alias(), 10, m)
+                    outgoing_list.append(msg)
+            #if client is not creator
+            else:
+                lonely_chatroom.remove_client(client.get_cid())
+                chatroom_dict['main_chatroom'].add_client(client.get_cid())
+                m = "{} left {} and join main_chatroom".format(client.get_alias(), lonely_chatroom)
+                msg = Message(client.get_cid(), client.get_alias(), 10, m)
+                outgoing_list.append(msg)
+
+
 
     def start_server(self):
         pass
