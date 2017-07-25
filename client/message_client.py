@@ -9,7 +9,12 @@ class Message:
         self._time = timestamp  #datetime
 
     def to_string(self):
-        return ' '.join([self._alias, str(self._type.value), self._payload])
+        try:
+            string = ' '.join([self._alias, str(self._type.value), self._payload])
+        except:
+            return ''
+        else:
+            return string
 
     def get_time(self):
         return self._time
