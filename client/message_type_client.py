@@ -12,3 +12,4 @@ class MessageType(Enum):
     leave = 10
     start_server = 11
     stop_server = 12
+    quit = 13

@@ -1,4 +1,4 @@
-from message_type import MessageType
+from message_type_client import MessageType
 import datetime
 class Message:
     #change this
