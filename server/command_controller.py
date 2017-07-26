@@ -11,8 +11,17 @@ class CMDcontroller:
         self.outgoing_queue = queue.Queue()
     #    self.chatroom = Chatroom()
 
-    def isPermitted(self, client):
-        pass
+    #return true if the message is permitted
+    #return false if the message is not permitted
+    def isPermitted(self, msg):
+        type = msg.type
+        client = self.client_dict[msg.cid]
+
+
+
+
+
+
 
     def process_message(self, msg):
         type = msg.type
@@ -53,7 +62,7 @@ class CMDcontroller:
             if value.name not in restricted:
                 help_list.append(value.name)
         payload = ' '.join(help_list)
-        msg = Message(client.alias, MessageType.help, payload)
+        msg = Message(client.get_cid(), client.get_alias(), MessageType.help, payload)
         self.outgoing_queue.append(msg)
 
     def leave_chatroom(self, client, reply = False):
