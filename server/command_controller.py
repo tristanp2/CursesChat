@@ -2,6 +2,7 @@ from chatroom import Chatroom
 from message import Message
 from message_type import MessageType
 import queue
+import copy
 
 class CMDcontroller:
 
@@ -9,7 +10,7 @@ class CMDcontroller:
         self.chatroom_dict = chatroom_dict
         self.client_dict = client_dict
         self.outgoing_queue = queue.Queue()
-    #    self.chatroom = Chatroom()
+        self.server_alias = 'server'
 
     def isPermitted(self, client):
         pass
@@ -20,6 +21,8 @@ class CMDcontroller:
 
         if type == MessageType.alias:
             self.set_alias(client, msg.payload)
+        elif type == MessageType.chat_message:
+            self.chat_message(client, msg)
         elif type == MessageType.block:
             self.block_user()
         elif type == MessageType.create:
@@ -40,10 +43,19 @@ class CMDcontroller:
         return self.outgoing_queue.get()
 
     def login(self, alias, client):
-        client.set_alias(alias)
+        self.set_alias(client, alias)
+        cr = self.chatroom_dict['main_chatroom']
+        self.__do_chatroom_update(cr)
 
     def logout(self):
         pass
+
+    def __broadcast_data(self, message, client_list):
+        for client_cid in client_list:
+            client = self.client_dict[client_cid]
+            msg = copy.copy(message)
+            msg.cid = client.get_cid()
+            self.outgoing_queue.put(msg)
 
     def help(self, client):
         # print options.values()?
@@ -53,13 +65,13 @@ class CMDcontroller:
             if value.name not in restricted:
                 help_list.append(value.name)
         payload = ' '.join(help_list)
-        msg = Message(client.alias, MessageType.help, payload)
+        msg = Message(client.get_cid(), client.get_alias(), MessageType.help, payload)
         self.outgoing_queue.append(msg)
 
     def leave_chatroom(self, client, reply = False):
         #client can't leave main chatroom
         if reply and client.get_chatroom() == 'main_chatroom':
-            msg = Message(client.get_cid(), client.get_alias(), MessageType.chat_message,"sorry you can not leave main chatroom")
+            msg = Message(client.get_cid(), self.server_alias, MessageType.chat_message,"sorry you can not leave main chatroom")
             outgoing_list.append(msg)
         #if client is creator
         lonely_chatroom = client.get_chatroom()
@@ -84,17 +96,20 @@ class CMDcontroller:
                 del chatroom_dict[lonely_chatroom]
                 for c in client_list:
                     m = "{} left {} and join main_chatroom".format(c.get_alias(), lonely_chatroom)
-                    msg = Message(client.get_cid(), client.get_alias(), 10, m)
+                    msg = Message(client.get_cid(), client.get_alias(), MessageType.leave, m)
                     outgoing_list.append(msg)
             #if client is not creator
             else:
                 lonely_chatroom.remove_client(client.get_cid())
                 chatroom_dict['main_chatroom'].add_client(client.get_cid())
                 m = "{} left {} and join main_chatroom".format(client.get_alias(), lonely_chatroom)
-                msg = Message(client.get_cid(), client.get_alias(), 10, m)
+                msg = Message(client.get_cid(), client.get_alias(), MessageType.leave, m)
                 outgoing_list.append(msg)
 
 
+    def chat_message(self, client, msg):
+        chatroom = self.chatroom_dict[client.get_chatroom()]
+        self.__broadcast_data(msg, chatroom.client)
 
     def start_server(self):
         pass
@@ -113,7 +128,8 @@ class CMDcontroller:
 
     #Creates and pushes update messages for everyone in chatroom   
     def __do_chatroom_update(self, chatroom):
-        payload = chatroom.get_name() + ' ' + ' '.join(chatroom.client)
+        alias_list = list(map(lambda x: self.client_dict[x].get_alias(), chatroom.client))
+        payload = chatroom.get_name() + ' ' + ' '.join(alias_list)
         for cid in chatroom.client:
             cli = self.client_dict[cid]
             msg = Message(cli.get_cid(), cli.get_alias(), MessageType.chatroom_update, payload)
@@ -129,6 +145,7 @@ class CMDcontroller:
 
     def set_alias(self, client, alias):
         client.set_alias(alias)
+        msg = Message(client.get_cid(), client.get_alias(), MessageType.alias, client.get_alias())
 
     def block_user(self):
         pass
