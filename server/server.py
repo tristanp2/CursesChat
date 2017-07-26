@@ -26,8 +26,8 @@ class Server:
         self.client_cid_to_client = {}
         self.chatroom = {}
         self.connected_client_socket = []
-        send_queue = queue.Queue()
-        receive_queue = queue.Queue()
+        self.debug_queue = queue.Queue()
+
         #self.send_MSGHandler = SendMessageHandler(self.socket)
         #self.receive_MSGHandler = ReceiveMessageHandler(self.socket)
         self.controller = CMDcontroller(self.client_cid_to_client, self.chatroom)
@@ -41,7 +41,7 @@ class Server:
                 sock = self.client_cid_to_sock[msg.cid]
                 string = msg.to_string()
                 sock.send(string.encode())
-                print(string)
+                self.debug_queue.put(string)
         except OSError:
             print('Error in send loop')
 
@@ -97,7 +97,11 @@ class Server:
     def main_loop(self):
         self.send_thread.start()
         while True:
-
+            try:
+                while True:
+                    print(self.debug_queue.get_nowait())
+            except queue.Empty:
+                pass
             read_sockets, write_sockets, error_sockets = select.select(self.connected_client_socket, [], [])
 
             for sock in read_sockets:
@@ -136,6 +140,7 @@ class Server:
                         temp_client = self.client_cid_to_client[temp_cid]
                         temp_chatroom = self.chatroom[temp_client.get_chatroom()]
                         temp_chatroom.remove_client(temp_cid)
+                        self.controller.do_chatroom_update(temp_chatroom)
                         del self.client_sock_to_cid[sock]
                         del self.client_cid_to_sock[temp_cid]
                         del self.client_cid_to_client[temp_cid]
