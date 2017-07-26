@@ -2,6 +2,7 @@ from message_type_client import MessageType
 import datetime
 class Message:
     #change this
+    time_format = '%H:%M:%S'
     def __init__(self, type, payload, timestamp, alias = None):
         self._type = type       #MessageType
         self._payload = payload #str

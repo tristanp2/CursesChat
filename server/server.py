@@ -5,7 +5,9 @@ from client import Client
 from chatroom import Chatroom
 from message import Message
 from command_controller import CMDcontroller
+from message_type import MessageType
 import queue
+import threading
 
 class Server:
 
@@ -29,6 +31,19 @@ class Server:
         #self.send_MSGHandler = SendMessageHandler(self.socket)
         #self.receive_MSGHandler = ReceiveMessageHandler(self.socket)
         self.controller = CMDcontroller(self.client_cid_to_client, self.chatroom)
+        self.send_thread = threading.Thread(None, self.__send_loop, 'send_t')
+        self.send_thread.setDaemon(True)
+
+    def __send_loop(self):
+        try:
+            while True:
+                msg = self.controller.pop_outgoing()
+                sock = self.client_cid_to_sock[msg.cid]
+                string = msg.to_string()
+                sock.send(string.encode())
+                print(string)
+        except OSError:
+            print('Error in send loop')
 
     def start(self):
         self.socket.bind(self.get_adrs())
@@ -42,18 +57,6 @@ class Server:
 
     def get_adrs(self):
         return self.server_adrs
-
-    def broadcast_data(self, sock, message, List):
-        for socket in List:
-            if socket != self.socket:
-                try:
-                    print(message)
-                    socket.send(message.encode())
-                except OSError as err:
-                    print('OS error: {0}'.format(err))
-                    print(socket)
-                    #socket.close()
-                    #List.remove(socket)
 
     def process_incoming_con(self, socket):
         pass
@@ -84,14 +87,15 @@ class Server:
         cid = self.client_sock_to_cid[sock]
         args = message.split(' ')
         alias = args[0]
-        type = args[1]
-        payload = args[2:]
+        type = MessageType(int(args[1]))
+        payload = ' '.join(args[2:])
         #TODO: add cid as first parameter
         msg = Message(cid, alias, type, payload)
         #TODO: push to receive queue, so we dont need to return msg
         return msg
 
     def main_loop(self):
+        self.send_thread.start()
         while True:
 
             read_sockets, write_sockets, error_sockets = select.select(self.connected_client_socket, [], [])
@@ -117,21 +121,12 @@ class Server:
                     # self.broadcast_data(connection, '{!r} entered chatroom'.format(client_adrs) , self.connected_client_socket)
 
                 else:
-                    # print('enter else')
                     try:
-                        # print('before recv')
                         data = sock.recv(1024)
-                        # print('after recv')
                         if data:
                             msg = self.parse_input(data.decode(), sock)
-                            client_id = self.client_sock_to_cid[sock]
-                            client = self.client_cid_to_client[client_id]
-                            current_chatroom = self.chatroom[client.get_chatroom()]
-                            filtered_list = [self.client_cid_to_sock[k] for k in current_chatroom.get_cid_list()]
-                            # message format should be: alias type time data
-                            self.broadcast_data(sock,
-                                                      '{} {} {} {}'.format(msg.alias, msg.type.value, msg.timestamp,
-                                                                           msg.payload), filtered_list)
+                            self.controller.process_message(msg)
+                         
                     except OSError as err:
                         print('OS error: {0}'.format(err))
                         print('Client {} is offline'.format(sock.getpeername()))
