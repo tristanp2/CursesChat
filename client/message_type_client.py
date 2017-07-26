@@ -3,7 +3,7 @@ class MessageType(Enum):
     chat_message =  1
     alias = 2
     block = 3
-    list = 4
+    help = 4
     login = 5
     logout = 6
     create = 7
