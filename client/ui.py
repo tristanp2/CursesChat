@@ -174,6 +174,13 @@ class ExTextbox(Textbox):
         self.clear()
         return result
 
+    #this exists in windows version of python curses, but not linux
+    #so it is reimplemented here
+    def _update_max_yx(self):
+        maxy, maxx = self.win.getmaxyx()
+        self.maxy = maxy - 1
+        self.maxx = maxx - 1
+
     def edit(self):
         #hackish to make textbox return on enter press
         def exit_on_enter(ch):
