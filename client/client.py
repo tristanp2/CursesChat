@@ -78,6 +78,9 @@ class Client:
         self.exit_msg = msg
         self.exit_lock.release()
 
+    def __split_received(self, received):
+        return received.split(Message.end_char)
+
     def __send_loop(self):
         try:
             while True and not self.exit:
@@ -90,7 +93,10 @@ class Client:
         try:
             while True and not self.exit:
                 data = self.socket.recv(1024)
-                self.received_queue.put(data.decode())
+                m_list = self.__split_received(data.decode())
+                for m in m_list:
+                    if m:
+                        self.received_queue.put(m)
         except OSError:
             self.__set_exit('Networking exception')
 
