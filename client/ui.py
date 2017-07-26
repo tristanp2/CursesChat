@@ -37,7 +37,8 @@ class UI:
             self.input_win = SubWindowWrapper(self.screen, self.scr_height - 5, 8, self.scr_height - 3, self.scr_width - 30, 1)
             self.output_win = SubWindowWrapper(self.screen, 1, self.input_win.ulx, self.input_win.uly - 3, self.input_win.lrx, 1)
             self.info_win = SubWindowWrapper(self.screen, 3, self.output_win.lrx + 3, self.output_win.lry, self.scr_width - 3, 1)
-            self.cname_win = SubWindowWrapper(self.screen, self.info_win.uly - 2, self.info_win.ulx, self.info_win.uly - 2, self.info_win.lrx)
+            self.cname_win = SubWindowWrapper(self.screen, self.info_win.uly - 2, self.info_win.ulx, self.info_win.uly - 1, self.info_win.lrx)
+            self.cname_win.win.addstr('Global:')
         else:
             self.input_win = SubWindowWrapper(self.screen, self.scr_height - 5, 8, self.scr_height - 3, self.scr_width - 8, 1)
             self.output_win = SubWindowWrapper(self.screen, 1, self.input_win.ulx, self.input_win.uly - 3, self.input_win.lrx, 1)
@@ -51,9 +52,6 @@ class UI:
         self.output_box = ExTextbox(self.output_win.win, True)
         if self.info_win:
             self.info_box = ExTextbox(self.info_win.win, True)
-        if self.cname_win:
-            self.cname_box = ExTextbox(self.cname_win.win, False)
-            self.cname_box.put_str('Global:')
         self.input_thread = threading.Thread(None, self._input_loop)
         self.input_thread.setDaemon(True)
         self.input_thread.start()
@@ -122,29 +120,23 @@ class UI:
             return string
         elif type == MessageType.chatroom_update:
             #payload should be 'chatroom client1 client2....'
-            if info_win:
-                payload_list = msg.get_payload().split(' ')
-                self.cname_box.clear()
-                self.cname_box.put_str(payload_list[0], False)
+            if self.info_win:
+                payload = msg.get_payload()
+                payload_list = payload.split(' ')
+                self.cname_win.win.clear()
+                self.cname_win.win.refresh()
+                self.cname_win.win.addstr(payload_list[0])
+                self.cname_win.win.refresh()
                 payload_list = payload_list[1:]
                 self.info_box.clear()
                 for name in payload_list:
                     self.info_box.put_str(name)
+                self.screen.refresh()
         else:
             pass
     
-    #Parse received string to Message obj and push obj to UI's output_queue
-    def parse_and_push(self, string):
-        args = string.split(' ')
-        msg = None
-        if len(args) >= 2:
-            alias = args[0]
-            mtype = MessageType(int(args[1]))
-            time = datetime.strptime(args[2], self.time_format)
-            payload = ' '.join(args[3:])
-            msg = Message(mtype, payload, time, alias)
-        if(msg):
-            self._output_queue.put(msg)
+    def push_received(self, msg):
+        self._output_queue.put(msg)
 
     def parse_input(self, string):
         trimmed = string.strip()
