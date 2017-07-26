@@ -60,7 +60,7 @@ class CMDcontroller:
         elif type == MessageType.chat_message:
             self.chat_message(client, msg)
         elif type == MessageType.block:
-            self.block_user()
+            self.block_user(client, msg.payload)
         elif type == MessageType.create:
             name = msg.payload
             self.create_chatroom(name,client)
@@ -96,13 +96,14 @@ class CMDcontroller:
     def help(self, client):
         # print options.values()?
         help_list = []
-        restricted = [MessageType.chat_message.name, MessageType.chatroom_update.name, MessageType.start_server.name, MessageType.stop_server.name]
+        restricted = [MessageType.chat_message.name, MessageType.chatroom_update.name, MessageType.start_server.name, MessageType.stop_server.name, MessageType.login.name, MessageType.logout.name]
         for value in MessageType:
             if value.name not in restricted:
                 help_list.append(value.name)
-        payload = ' '.join(help_list)
-        msg = Message(client.get_cid(), client.get_alias(), MessageType.help, payload)
-        self.outgoing_queue.append(msg)
+        payload = ', /'.join(help_list)
+        payload = '/' + payload
+        msg = Message(client.get_cid(), self.server_alias, MessageType.chat_message, payload)
+        self.outgoing_queue.put(msg)
 
     def chat_message(self, client, msg):
         chatroom = self.chatroom_dict[client.get_chatroom()]
@@ -120,10 +121,12 @@ class CMDcontroller:
 
         #if moderator leaves a chatroom, boot everyone to main
         if client == src_room.get_moderator():
-            kicked_clients = src_room.get_cid_list()
-            chatroom_dict[self.main_room_name].add_client_list(kicked_clients)
-            map(lambda k: self.client_dict[k].set_chatroom(self.main_room_name), kicked_clients)
-            del chatroom_dict[src_room.get_name()]
+            kicked_client_cids = src_room.get_cid_list()
+            self.chatroom_dict[self.main_room_name].add_client_list(kicked_client_cids)
+            for cid in kicked_client_cids:
+                cli = self.client_dict[cid]
+                cli.set_chatroom(self.main_room_name)
+            del self.chatroom_dict[src_room.get_name()]
             src_deleted = True
 
         dest_room.add_client(client.get_cid())
@@ -137,7 +140,7 @@ class CMDcontroller:
     def leave_chatroom(self, client):
         #client can't leave main chatroom
         if client.get_chatroom() == self.main_room_name:
-            msg = Message(client.get_cid(), self.server_alias, MessageType.chat_message,"sorry you can not leave main chatroom")
+            msg = Message(client.get_cid(), self.server_alias, MessageType.chat_message,"sorry. you can not leave main chatroom. type /quit to exit the program")
             self.outgoing_queue.put(msg)
         else:
             dest_cr = self.chatroom_dict[self.main_room_name]
@@ -146,8 +149,13 @@ class CMDcontroller:
 
     def join_chatroom(self, client, chatroom_name):
         old_chatroom = self.chatroom_dict[client.get_chatroom()]
-        new_chatroom = self.chatroom_dict[chatroom_name]
-        self.__switch_chatroom(old_chatroom, new_chatroom, client)
+        try:
+            new_chatroom = self.chatroom_dict[chatroom_name]
+        except KeyError:
+            msg = Message(client.get_cid(), self.server_alias, MessageType.chat_message, 'Chat room ' + chatroom_name + ' not found')
+            self.outgoing_queue.put(msg)
+        else:
+            self.__switch_chatroom(old_chatroom, new_chatroom, client)
 
     #Creates and pushes update messages for everyone in chatroom   
     def do_chatroom_update(self, chatroom):
@@ -174,8 +182,11 @@ class CMDcontroller:
         self.do_chatroom_update(cr)
         self.outgoing_queue.put(msg)
 
-    def block_user(self):
-        pass
+    def block_user(self, client, block_alias):
+        chatroom = self.client_dict[client.get_chatroom()]
+        target_client = None
+        #TODO:  Need a way to find client object by alias for this command. Maybe another dictionary? 
+        #       Alternative is to iterate through the cid-client dict, but that would make this command terribly expensive 
 
     def unblock_user(self):
         pass
