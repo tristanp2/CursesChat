@@ -8,6 +8,7 @@ class Message:
     #TODO: will take away alias eventually
     #alias is author of message
     #cid is recipient
+    end_char = chr(30)
     def __init__(self, cid, alias, type, payload):
         self.cid = cid
         self.alias = alias
@@ -19,4 +20,4 @@ class Message:
 
     def to_string(self):
         l = [self.alias, str(self.type.value), self.timestamp, self.payload]
-        return ' '.join(l)
+        return ' '.join(l) + Message.end_char

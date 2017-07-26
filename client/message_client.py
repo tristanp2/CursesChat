@@ -3,6 +3,7 @@ import datetime
 class Message:
     #change this
     time_format = '%H:%M:%S'
+    end_char = chr(30)
     def __init__(self, type, payload, timestamp, alias = None):
         self._type = type       #MessageType
         self._payload = payload #str
