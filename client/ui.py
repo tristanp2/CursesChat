@@ -203,7 +203,7 @@ class ExTextbox(Textbox):
             try:
                 if y == self.maxy:
                     self.win.addch(y,x, ' ')
-                self.win.addch(y - 1, x, oldch)
+                self.win.addch(y - 1, x, int(oldch))
             except curses.error:
                 pass
             
