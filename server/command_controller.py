@@ -13,8 +13,43 @@ class CMDcontroller:
         self.server_alias = 'server'
         self.main_room_name = 'main_chatroom'
 
-    def isPermitted(self, client):
-        pass
+    #return true if the message is permitted
+    #return false if the message is not permitted
+    def isPermitted(self, msg):
+        type = msg.type
+        payload = msg.payload
+        client = self.client_dict[msg.cid]
+        current_chatroom = client.get_chatroom()
+        client_list = list(self.client_dict.values())
+        chatroom_name_list = list(self.chatroom_dict.keys())
+
+        if type == MessageType.alias:
+            #check whether the name is taken
+            for c in client_list:
+                if c.get_alias() == payload:
+                    return False
+                else:
+                    return True
+        if type == MessageType.join:
+            if current_chatroom == payload:
+                return False
+            else:
+                return True
+        if type == MessageType.create:
+            for ch in chatroom_name_list:
+                if ch == payload:
+                    return False
+                else:
+                    return True
+        if type == MessageType.delete:
+            if current_chatroom != payload:
+                return False
+            else:
+                if client != self.chatroom_dict[current_chatroom].get_moderator():
+                    return False
+                else:
+                    return True
+
 
     def process_message(self, msg):
         type = msg.type
