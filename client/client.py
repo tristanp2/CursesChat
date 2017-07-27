@@ -12,7 +12,7 @@ class Client:
     def __init__(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         #asumming the server is localhost and port is 10000
-        self.server_adrs = ('134.87.133.12', 10000)
+        self.server_adrs = ('134.87.170.182', 10000)
         #self.server_adrs = ('134.87.170.182', 10000)
         self.received_queue = queue.Queue()
         self.outgoing_queue = queue.Queue()
@@ -38,15 +38,24 @@ class Client:
         return msg
 
     def main_loop(self):
-        self.alias = self.ui.start_login(self.server_adrs[0])
-        self.login_message.set_alias(self.alias)
+        alias = self.ui.start_login(self.server_adrs[0], )
+        self.login_message.set_alias(alias)
         try:
             self.socket.connect(self.server_adrs)
             self.recv_thread.start()
             self.send_thread.start()
-            self.socket.send(self.login_message.to_string().encode())
-            self.ui.end_login()
-            
+            self.outgoing_queue.put(self.login_message)
+            while True:
+                string = self.received_queue.get()
+                msg =  self.parse_received(string)
+                if msg.get_type() == MessageType.refuse:
+                    alias = self.ui.start_login(self.server_adrs[0], True)
+                    self.login_message.set_alias(alias)
+                    self.outgoing_queue.put(self.login_message)
+                elif msg.get_type() == MessageType.alias:
+                    self.alias = msg.get_payload()
+                    break                
+            self.ui.end_login()            
             self.ui.start_chat()
             while True and not self.exit:
                 try:

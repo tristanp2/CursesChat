@@ -13,11 +13,15 @@ class UI:
         self._send_queue = queue.Queue()
         self.screen = curses.initscr()
         self.scr_height, self.scr_width = self.screen.getmaxyx()
+        self.current_room = ''
         curses.noecho()
 
-    def start_login(self, address):
+    def start_login(self, address, retry = False):
         login_win = SubWindowWrapper(self.screen, 1, 8, 2, self.scr_width)
         login_box = ExTextbox(login_win.win)
+        if retry:
+            self.screen.clear()
+            self.screen.addstr(3,1, 'Login failed. Please enter a different alias.')
         self.screen.addstr(1,1, 'alias: ')
         self.refresh_screen()
         login_box.edit()
@@ -120,9 +124,13 @@ class UI:
             return string
         elif type == MessageType.chatroom_update:
             #payload should be 'chatroom client1 client2....'
+            payload = msg.get_payload()
+            payload_list = payload.split(' ')
+            cr = payload_list[0]
+            if cr != self.current_room:
+                self.current_room = cr
+                self.output_box.clear()
             if self.info_win:
-                payload = msg.get_payload()
-                payload_list = payload.split(' ')
                 self.cname_win.win.clear()
                 self.cname_win.win.refresh()
                 self.cname_win.win.addstr(payload_list[0])
@@ -151,8 +159,8 @@ class UI:
                 else:
                     mtype = cmd_val
                     time = None
-                    if len(args) >= 2:
-                        payload = ' '.join(args[1:])
+                    if len(args)>1 and cmd_val in [MessageType.alias, MessageType.join, MessageType.create, MessageType.delete, MessageType.block]:
+                        payload = args[1]
                     else:
                         payload = ''
                     msg = Message(mtype, payload, time)
