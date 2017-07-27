@@ -24,13 +24,14 @@ class Server:
         self.client_sock_to_cid = {}
         self.client_cid_to_sock = {}
         self.client_cid_to_client = {}
+        self.client_alias_to_cid = {}
         self.chatroom = {}
         self.connected_client_socket = []
         self.debug_queue = queue.Queue()
 
         #self.send_MSGHandler = SendMessageHandler(self.socket)
         #self.receive_MSGHandler = ReceiveMessageHandler(self.socket)
-        self.controller = CMDcontroller(self.client_cid_to_client, self.chatroom)
+        self.controller = CMDcontroller(self.client_alias_to_cid, self.client_cid_to_client, self.chatroom)
         self.send_thread = threading.Thread(None, self.__send_loop, 'send_t')
         self.send_thread.setDaemon(True)
 
@@ -129,6 +130,7 @@ class Server:
                         data = sock.recv(1024)
                         if data:
                             msg = self.parse_input(data.decode(), sock)
+
                             self.controller.process_message(msg)
                          
                     except OSError as err:
