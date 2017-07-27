@@ -24,6 +24,7 @@ class Server:
         self.client_sock_to_cid = {}
         self.client_cid_to_sock = {}
         self.client_cid_to_client = {}
+        self.client_alias_to_cid = {}
         self.chatroom = {}
         self.connected_client_socket = []
         self.debug_queue = queue.Queue()
@@ -129,6 +130,7 @@ class Server:
                         data = sock.recv(1024)
                         if data:
                             msg = self.parse_input(data.decode(), sock)
+
                             self.controller.process_message(msg)
                          
                     except OSError as err:

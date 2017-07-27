@@ -6,9 +6,10 @@ import copy
 
 class CMDcontroller:
 
-    def __init__(self, client_dict, chatroom_dict):
+    def __init__(self, client_alias_dict, client_dict, chatroom_dict):
         self.chatroom_dict = chatroom_dict
         self.client_dict = client_dict
+        self.client_alias_dict = client_alias_dict
         self.outgoing_queue = queue.Queue()
         self.server_alias = 'server'
         self.main_room_name = 'main_chatroom'
@@ -49,7 +50,7 @@ class CMDcontroller:
                     return False
                 else:
                     return True
-
+        return True
 
     def process_message(self, msg):
         type = msg.type
@@ -79,6 +80,7 @@ class CMDcontroller:
         return self.outgoing_queue.get()
 
     def login(self, alias, client):
+        self.client_alias_dict[alias] = client.get_cid()
         self.set_alias(client, alias)
         cr = self.chatroom_dict[self.main_room_name]
         self.do_chatroom_update(cr)
