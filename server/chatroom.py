@@ -6,6 +6,7 @@ class Chatroom:
         self.name = name
         self.moderator = creator
         self.client = []
+        self.blocked_client = []
 
     #return true if client exist in chatroom instance
     def check_client(self, cid):
