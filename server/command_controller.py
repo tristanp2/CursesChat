@@ -65,7 +65,7 @@ class CMDcontroller:
             name = msg.payload
             self.create_chatroom(name,client)
         elif type == MessageType.delete:
-            self.delete_chatroom()
+            self.delete_chatroom(client, msg.payload)
         elif type == MessageType.join:
             self.join_chatroom(client, msg.payload)
         elif type == MessageType.leave:
@@ -93,6 +93,10 @@ class CMDcontroller:
             msg.cid = client.get_cid()
             self.outgoing_queue.put(msg)
 
+    def __server_notification(self, string, chatroom):
+        msg = Message(0, self.server_alias, MessageType.chat_message, string)
+        self.__broadcast_data(msg, chatroom.get_cid_list())
+
     def help(self, client):
         # print options.values()?
         help_list = []
@@ -117,24 +121,10 @@ class CMDcontroller:
 
     def __switch_chatroom(self, src_room, dest_room, client):
         src_room.remove_client(client.get_cid())
-        src_deleted = False
-
-        #if moderator leaves a chatroom, boot everyone to main
-        if client == src_room.get_moderator():
-            kicked_client_cids = src_room.get_cid_list()
-            self.chatroom_dict[self.main_room_name].add_client_list(kicked_client_cids)
-            for cid in kicked_client_cids:
-                cli = self.client_dict[cid]
-                cli.set_chatroom(self.main_room_name)
-            del self.chatroom_dict[src_room.get_name()]
-            src_deleted = True
-
         dest_room.add_client(client.get_cid())
+        self.__server_notification(client.get_alias() + ' has joined the room', dest_room)
         client.set_chatroom(dest_room.get_name())
-        if not src_deleted:
-            self.do_chatroom_update(src_room)
-        else:
-            self.do_chatroom_update(self.chatroom_dict[self.main_room_name])
+        self.do_chatroom_update(src_room)
         self.do_chatroom_update(dest_room)
       
     def leave_chatroom(self, client):
@@ -172,13 +162,35 @@ class CMDcontroller:
         old_room = self.chatroom_dict[client.get_chatroom()]
         self.__switch_chatroom(old_room, new_room, client)
 
-    def delete_chatroom(self):
-        pass
+    def delete_chatroom(self, client, chatroom_name):
+        #if moderator leaves a chatroom, boot everyone to main
+        try:
+            target_room = self.chatroom_dict[chatroom_name]
+        except KeyError:
+            msg = Message(client.get_cid(), self.server_alias, MessageType.chat_message, 'Chat room ' + chatroom_name + ' not found')
+            self.outgoing_queue.put(msg)
+        else:
+            if client == target_room.get_moderator():
+                kicked_client_cids = target_room.get_cid_list()
+                main_room = self.chatroom_dict[self.main_room_name]
+                self.__server_notification(chatroom_name + ' has been deleted, you have been kicked', target_room)
+                main_room.add_client_list(kicked_client_cids)
+                for cid in kicked_client_cids:
+                    cli = self.client_dict[cid]
+                    cli.set_chatroom(self.main_room_name)
+                del self.chatroom_dict[chatroom_name]
+                self.do_chatroom_update(main_room)
+            else:
+                msg = Message(client.get_cid(), self.server_alias, MessageType.chat_message, 'You need to be creator of a room to delete it')
+                self.outgoing_queue.put(msg)
 
     def set_alias(self, client, alias):
+        old_alias = client.get_alias()
         client.set_alias(alias)
         msg = Message(client.get_cid(), client.get_alias(), MessageType.alias, client.get_alias())
         cr = self.chatroom_dict[client.get_chatroom()]
+        if len(old_alias) > 0:
+            self.__server_notification('Renamed ' + old_alias + ' to ' + alias, cr)
         self.do_chatroom_update(cr)
         self.outgoing_queue.put(msg)
 
