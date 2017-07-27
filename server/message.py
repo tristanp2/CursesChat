@@ -13,7 +13,7 @@ class Message:
         self.cid = cid
         self.alias = alias
         self.type = type
-        self.payload = payload
+        self.payload = payload.strip()
         t = datetime.now()
         str_t = t.strftime('%H:%M:%S')
         self.timestamp = str_t
