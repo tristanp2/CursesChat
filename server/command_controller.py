@@ -51,24 +51,37 @@ class CMDcontroller:
                 else:
                     return True
         return True
+    def __refuse_empty(self, cid, msg_type):
+        msg = Message(cid, self.server_alias, MessageType.chat_message, 'Command ''{}'' failed because no arguments were given'.format(msg_type.name))
+        self.outgoing_queue.put(msg)
 
     def process_message(self, msg):
         type = msg.type
         client = self.client_dict[msg.cid]
+        len_payload = len(msg.payload)
 
         if type == MessageType.alias:
             self.set_alias(client, msg.payload)
         elif type == MessageType.chat_message:
             self.chat_message(client, msg)
         elif type == MessageType.block:
-            self.block_user(client, msg.payload)
+            if len_payload == 0:
+                self.__refuse_empty(msg.cid, type)
+            else:
+                self.block_user(client, msg.payload)
         elif type == MessageType.create:
-            name = msg.payload
-            self.create_chatroom(name,client)
+            if len_payload == 0:
+                self.__refuse_empty(msg.cid, type)
+            else:
+                name = msg.payload
+                self.create_chatroom(name,client)
         elif type == MessageType.delete:
             self.delete_chatroom(client, msg.payload)
         elif type == MessageType.join:
-            self.join_chatroom(client, msg.payload)
+            if len_payload == 0:
+                self.__refuse_empty(msg.cid, type)
+            else:
+                self.join_chatroom(client, msg.payload)
         elif type == MessageType.leave:
             self.leave_chatroom(client)
         elif type == MessageType.help:
@@ -79,11 +92,24 @@ class CMDcontroller:
     def pop_outgoing(self):
         return self.outgoing_queue.get()
 
+    #ya this is a mess
     def login(self, alias, client):
-        self.client_alias_dict[alias] = client.get_cid()
-        self.set_alias(client, alias)
-        cr = self.chatroom_dict[self.main_room_name]
-        self.do_chatroom_update(cr)
+        if len(alias) <= 2:
+            msg = Message(client.get_cid(), self.server_alias, MessageType.refuse,'')
+            self.outgoing_queue.put(msg)
+            return
+        try:
+            self.client_alias_dict[alias]
+        except KeyError:
+            self.client_alias_dict[alias] = client.get_cid()
+            client.set_alias(alias)
+            msg = Message(client.get_cid(), client.get_alias(), MessageType.alias, client.get_alias())
+            cr = self.chatroom_dict[self.main_room_name]
+            self.outgoing_queue.put(msg)
+            self.do_chatroom_update(cr)
+        else:
+            msg = Message(client.get_cid(), self.server_alias, MessageType.refuse,'')
+            self.outgoing_queue.put(msg)
 
     def logout(self):
         pass
@@ -124,10 +150,11 @@ class CMDcontroller:
     def __switch_chatroom(self, src_room, dest_room, client):
         src_room.remove_client(client.get_cid())
         dest_room.add_client(client.get_cid())
-        self.__server_notification(client.get_alias() + ' has joined the room', dest_room)
+        
         client.set_chatroom(dest_room.get_name())
         self.do_chatroom_update(src_room)
         self.do_chatroom_update(dest_room)
+        self.__server_notification(client.get_alias() + ' has joined the room', dest_room)
       
     def leave_chatroom(self, client):
         #client can't leave main chatroom
@@ -161,6 +188,7 @@ class CMDcontroller:
     def create_chatroom(self, name, client):
         new_room = self.chatroom_dict[name] = Chatroom(name)
         new_room.set_moderator(client)
+        client.add_created_room(name)
         old_room = self.chatroom_dict[client.get_chatroom()]
         self.__switch_chatroom(old_room, new_room, client)
 
@@ -172,33 +200,41 @@ class CMDcontroller:
             msg = Message(client.get_cid(), self.server_alias, MessageType.chat_message, 'Chat room ' + chatroom_name + ' not found')
             self.outgoing_queue.put(msg)
         else:
-            if client == target_room.get_moderator():
+            if  client == None or client == target_room.get_moderator():
                 kicked_client_cids = target_room.get_cid_list()
                 main_room = self.chatroom_dict[self.main_room_name]
-                self.__server_notification(chatroom_name + ' has been deleted, you have been kicked', target_room)
                 main_room.add_client_list(kicked_client_cids)
+                self.do_chatroom_update(main_room)
+                self.__server_notification(chatroom_name + ' has been deleted, you have been kicked', target_room)
                 for cid in kicked_client_cids:
                     cli = self.client_dict[cid]
                     cli.set_chatroom(self.main_room_name)
                 del self.chatroom_dict[chatroom_name]
-                self.do_chatroom_update(main_room)
             else:
                 msg = Message(client.get_cid(), self.server_alias, MessageType.chat_message, 'You need to be creator of a room to delete it')
                 self.outgoing_queue.put(msg)
 
     def set_alias(self, client, alias):
+        if len(alias) <= 2:
+            msg = Message(client.get_cid(), self.server_alias, MessageType.chat_message, 'Alias must be at least 3 characters long')
+            self.outgoing_queue.put(msg)
+            return
+
         old_alias = client.get_alias()
-        client.set_alias(alias)
-        msg = Message(client.get_cid(), client.get_alias(), MessageType.alias, client.get_alias())
-        cr = self.chatroom_dict[client.get_chatroom()]
-        if len(old_alias) > 0:
-            self.__server_notification('Renamed ' + old_alias + ' to ' + alias, cr)
-        self.do_chatroom_update(cr)
-        self.outgoing_queue.put(msg)
+        try:
+            temp = self.client_alias_dict[alias]
+        except KeyError:
+            client.set_alias(alias)
+            msg = Message(client.get_cid(), client.get_alias(), MessageType.alias, client.get_alias())
+            cr = self.chatroom_dict[client.get_chatroom()]
+            if len(old_alias) > 0:
+                self.__server_notification('Renamed ' + old_alias + ' to ' + alias, cr)
+            self.do_chatroom_update(cr)
+            self.outgoing_queue.put(msg)
 
     def block_user(self, client, block_alias):
         chatroom = self.client_dict[client.get_chatroom()]
-        target_client = None
+        target_client = self.client_dict[self.client_alias_dict[block_alias]]
         #TODO:  Need a way to find client object by alias for this command. Maybe another dictionary? 
         #       Alternative is to iterate through the cid-client dict, but that would make this command terribly expensive 
 
