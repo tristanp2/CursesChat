@@ -31,7 +31,7 @@ class Server:
 
         #self.send_MSGHandler = SendMessageHandler(self.socket)
         #self.receive_MSGHandler = ReceiveMessageHandler(self.socket)
-        self.controller = CMDcontroller(self.client_cid_to_client, self.chatroom)
+        self.controller = CMDcontroller(self.client_alias_to_cid, self.client_cid_to_client, self.chatroom)
         self.send_thread = threading.Thread(None, self.__send_loop, 'send_t')
         self.send_thread.setDaemon(True)
 
