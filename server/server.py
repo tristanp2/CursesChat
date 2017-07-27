@@ -36,16 +36,20 @@ class Server:
         self.send_thread.setDaemon(True)
 
     def __send_loop(self):
-        try:
-            while True:
-                msg = self.controller.pop_outgoing()
-                sock = self.client_cid_to_sock[msg.cid]
-                string = msg.to_string()
-                sock.send(string.encode())
-                self.debug_queue.put(string)
-        except OSError:
-            print('Error in send loop')
-
+        while True:
+            try:
+                try:
+                    msg = self.controller.pop_outgoing()
+                    sock = self.client_cid_to_sock[msg.cid]
+                except KeyError:
+                    self.debug_queue.put('Could not find cid {} in dict. Client has disconnected?'.format(msg.cid))
+                else:
+                    string = msg.to_string()
+                    sock.send(string.encode())
+                    self.debug_queue.put(string)
+            except OSError as err:
+                self.debug_queue.put('OSError: {} in send loop on socket: {}'.format(err,sock.getpeername()))
+                   
     def start(self):
         self.socket.bind(self.get_adrs())
         self.socket.listen(5)
@@ -140,9 +144,16 @@ class Server:
                         self.connected_client_socket.remove(sock)
                         temp_cid = self.client_sock_to_cid[sock]
                         temp_client = self.client_cid_to_client[temp_cid]
-                        temp_chatroom = self.chatroom[temp_client.get_chatroom()]
-                        temp_chatroom.remove_client(temp_cid)
+                        for room_name in temp_client.get_owned_rooms():
+                            self.controller.delete_chatroom(None, room_name)
+                        try:
+                            temp_chatroom = self.chatroom[temp_client.get_chatroom()]
+                        except KeyError:
+                            pass
+                        else:
+                            temp_chatroom.remove_client(temp_cid)
                         self.controller.do_chatroom_update(temp_chatroom)
+                        del self.client_alias_to_cid[temp_client.get_alias()]
                         del self.client_sock_to_cid[sock]
                         del self.client_cid_to_sock[temp_cid]
                         del self.client_cid_to_client[temp_cid]
