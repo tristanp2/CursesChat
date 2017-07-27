@@ -5,9 +5,16 @@ class Client:
         self.aliasname = ''
         self.chatroom = chatroom
         self.socket = socket
+        self.owned_rooms = []
 
     def get_chatroom(self):
         return self.chatroom
+
+    def add_created_room(self, cr_name):
+        self.owned_rooms.append(cr_name)
+
+    def get_owned_rooms(self):
+        return self.owned_rooms
 
     def get_cid(self):
         return self.id
