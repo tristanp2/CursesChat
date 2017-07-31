@@ -147,7 +147,7 @@ class Server:
                         for room_name in temp_client.get_owned_rooms():
                             self.controller.delete_chatroom(None, room_name)
                         try:
-                            temp_chatroom = self.chatroom[temp_client.get_chatroom()]
+                            temp_chatroom = self.chatroom[temp_client.get_chatroom_name()]
                         except KeyError:
                             pass
                         else:
