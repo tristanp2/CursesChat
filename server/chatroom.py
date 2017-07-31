@@ -15,7 +15,6 @@ class Chatroom:
             return False
         else:
             return True
-
     def get_name(self):
         return self.name
 
@@ -30,6 +29,21 @@ class Chatroom:
 
     def add_client(self, cid):
         self.client.append(cid)
+        
+    def is_blocked(self, cid):
+        return cid in self.blocked_client
+
+    def block_client(self, cid):
+        if cid not in self.blocked_client:
+            self.blocked_client.append(alias)
+        
+    def unblock_client(self, cid):
+        try:
+            self.blocked_client.remove(cid)
+        except ValueError:
+            return False
+        else:
+            return True
 
     def add_client_list(self, cid_list):
         self.client.extend(cid_list)

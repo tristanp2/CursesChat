@@ -15,3 +15,4 @@ class MessageType(Enum):
     quit = 13
     chatroom_update = 14
     refuse = 15
+    unblock = 16

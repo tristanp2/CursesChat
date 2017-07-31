@@ -159,7 +159,7 @@ class UI:
                 else:
                     mtype = cmd_val
                     time = None
-                    if len(args)>1 and cmd_val in [MessageType.alias, MessageType.join, MessageType.create, MessageType.delete, MessageType.block]:
+                    if len(args)>1 and cmd_val in [MessageType.alias, MessageType.join, MessageType.create, MessageType.delete, MessageType.block, MessageType.unblock]:
                         payload = args[1]
                     else:
                         payload = ''
