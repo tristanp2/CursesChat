@@ -20,7 +20,7 @@ class CMDcontroller:
         type = msg.type
         payload = msg.payload
         client = self.client_dict[msg.cid]
-        current_chatroom = client.get_chatroom_name()
+        current_chatroom = client.get_chatroom()
         client_list = list(self.client_dict.values())
         chatroom_name_list = list(self.chatroom_dict.keys())
 
@@ -88,10 +88,6 @@ class CMDcontroller:
             self.help(client)
         elif type == MessageType.login:
             self.login(msg.alias, client)
-        elif type == MessageType.block:
-            self.block_user(client, msg.payload)
-        elif type == MessageType.unblock:
-            self.unblock_user(client, msg.payload)
 
     def pop_outgoing(self):
         return self.outgoing_queue.get()
@@ -142,7 +138,7 @@ class CMDcontroller:
         self.outgoing_queue.put(msg)
 
     def chat_message(self, client, msg):
-        chatroom = self.chatroom_dict[client.get_chatroom_name()]
+        chatroom = self.chatroom_dict[client.get_chatroom()]
         self.__broadcast_data(msg, chatroom.client)
 
     def start_server(self):
@@ -155,34 +151,30 @@ class CMDcontroller:
         src_room.remove_client(client.get_cid())
         dest_room.add_client(client.get_cid())
         
-        client.set_chatroom_name(dest_room.get_name())
+        client.set_chatroom(dest_room.get_name())
         self.do_chatroom_update(src_room)
         self.do_chatroom_update(dest_room)
         self.__server_notification(client.get_alias() + ' has joined the room', dest_room)
       
     def leave_chatroom(self, client):
         #client can't leave main chatroom
-        if client.get_chatroom_name() == self.main_room_name:
+        if client.get_chatroom() == self.main_room_name:
             msg = Message(client.get_cid(), self.server_alias, MessageType.chat_message,"sorry. you can not leave main chatroom. type /quit to exit the program")
             self.outgoing_queue.put(msg)
         else:
             dest_cr = self.chatroom_dict[self.main_room_name]
-            src_cr = self.chatroom_dict[client.get_chatroom_name()]
+            src_cr = self.chatroom_dict[client.get_chatroom()]
             self.__switch_chatroom(src_cr, dest_cr, client)
 
     def join_chatroom(self, client, chatroom_name):
-        old_chatroom = self.chatroom_dict[client.get_chatroom_name()]
+        old_chatroom = self.chatroom_dict[client.get_chatroom()]
         try:
             new_chatroom = self.chatroom_dict[chatroom_name]
         except KeyError:
             msg = Message(client.get_cid(), self.server_alias, MessageType.chat_message, 'Chat room ' + chatroom_name + ' not found')
             self.outgoing_queue.put(msg)
         else:
-            if client.is_blocked(new_chatroom.get_name()):
-                msg = Message(client.get_cid(), self.server_alias, MessageType.chat_message, 'Sorry, you are currently blocked from ' + new_chatroom.get_name())
-                self.outgoing_queue.put(msg)
-            else:
-                self.__switch_chatroom(old_chatroom, new_chatroom, client)
+            self.__switch_chatroom(old_chatroom, new_chatroom, client)
 
     #Creates and pushes update messages for everyone in chatroom   
     def do_chatroom_update(self, chatroom):
@@ -193,11 +185,19 @@ class CMDcontroller:
             msg = Message(cli.get_cid(), cli.get_alias(), MessageType.chatroom_update, payload)
             self.outgoing_queue.put(msg)
 
+
+
+    #TODO: need to check whether there is the same chatroom that name already exist
     def create_chatroom(self, name, client):
+        c = Counter(self.chatroom_dict)
+        if c[name]:
+            msg = Message(client.get_cid(), self.server_alias, MessageType.chat_message, 'Chatroom name already existed, use another name')
+            self.outgoing_queue.put(msg)
+            return
         new_room = self.chatroom_dict[name] = Chatroom(name)
         new_room.set_moderator(client)
         client.add_created_room(name)
-        old_room = self.chatroom_dict[client.get_chatroom_name()]
+        old_room = self.chatroom_dict[client.get_chatroom()]
         self.__switch_chatroom(old_room, new_room, client)
 
     def delete_chatroom(self, client, chatroom_name):
@@ -216,7 +216,7 @@ class CMDcontroller:
                 self.__server_notification(chatroom_name + ' has been deleted, you have been kicked', target_room)
                 for cid in kicked_client_cids:
                     cli = self.client_dict[cid]
-                    cli.set_chatroom_name(self.main_room_name)
+                    cli.set_chatroom(self.main_room_name)
                 del self.chatroom_dict[chatroom_name]
             else:
                 msg = Message(client.get_cid(), self.server_alias, MessageType.chat_message, 'You need to be creator of a room to delete it')
@@ -233,68 +233,25 @@ class CMDcontroller:
             temp = self.client_alias_dict[alias]
         except KeyError:
             client.set_alias(alias)
-            self.client_alias_dict[alias] = client
             msg = Message(client.get_cid(), client.get_alias(), MessageType.alias, client.get_alias())
-            cr = self.chatroom_dict[client.get_chatroom_name()]
+            cr = self.chatroom_dict[client.get_chatroom()]
             if len(old_alias) > 0:
                 self.__server_notification('Renamed ' + old_alias + ' to ' + alias, cr)
-                try:
-                    del self.client_alias_dict[old_alias]
-                except KeyError:
-                    pass
+            self.client_alias_dict[alias] = client.get_cid()
+            del self.client_alias_dict[old_alias]
             self.do_chatroom_update(cr)
-            self.outgoing_queue.put(msg)
-        else:
-            msg = Message(client.get_cid(), self.server_alias, MessageType.chat_message, 'Alias already exists')
             self.outgoing_queue.put(msg)
 
     def block_user(self, client, block_alias):
-        roomname = client.get_chatroom_name()
-        chatroom = self.chatroom_dict[roomname]
-        if client == chatroom.get_moderator():
-            try:
-                target_client = self.client_dict[self.client_alias_dict[block_alias]]
-                if target_client != client:
-                    target_client.block(roomname)
-                    if target_client.get_cid() in chatroom.get_cid_list():
-                        dest = self.chatroom_dict[self.main_room_name]
-                        self.__switch_chatroom(chatroom, dest, target_client)
-                    msg = Message(target_client.get_cid(), self.server_alias, MessageType.chat_message, 'You have been blocked from {} by {}'.format(roomname, client.get_alias()))
-                    self.outgoing_queue.put(msg)
-                else:
-                    msg = Message(client.get_cid(), self.server_alias, MessageType.chat_message, 'You cannot block yourself, dummy')
-                    self.outgoing_queue.put(msg)
-            except KeyError:
-                msg = Message(client.get_cid(), self.server_alias, MessageType.chat_message, 'Could not find user ' + block_alias)
-                self.outgoing_queue.put(msg)
-        else:
-            msg = Message(client.get_cid(), self.server_alias, MessageType.chat_message, 'You must be moderator of this room to block someone from it')
-            self.outgoing_queue.put(msg)
+        chatroom = self.client_dict[client.get_chatroom()]
+        target_client = self.client_dict[self.client_alias_dict[block_alias]]
+        #TODO:  Need a way to find client object by alias for this command. Maybe another dictionary? 
+        #       Alternative is to iterate through the cid-client dict, but that would make this command terribly expensive 
 
-    def unblock_user(self, client, unblock_alias):
-        roomname = client.get_chatroom_name()
-        chatroom = self.chatroom_dict[roomname]
-        if client == chatroom.get_moderator():
-            try:
-                target_client = self.client_dict[self.client_alias_dict[unblock_alias]]
-                if target_client != client:
-                    try:
-                        target_client.unblock(roomname)
-                    except ValueError:
-                        msg = Message(client.get_cid(),self.server_alias, MessageType.chat_message, 'User {} was not blocked from {}'.format(unblock_alias, roomname))
-                        self.outgoing_queue.put(msg)
-                    else:
-                        to_target = Message(target_client.get_cid(), self.server_alias, MessageType.chat_message, 'You have been unblocked from ' + roomname)
-                        to_client = Message(client.get_cid(), self.server_alias, MessageType.chat_message, '{} has been unblocked from {}'.format(unblock_alias, roomname))
-                        self.outgoing_queue.put(to_target)
-                        self.outgoing_queue.put(to_client)
-                else:
-                    msg = Message(client.get_cid(), self.server_alias, MessageType.chat_message, 'You cannot block yourself, dummy')
-                    self.outgoing_queue.put(msg)
-            except KeyError:
-                msg = Message(client.get_cid(), self.server_alias, MessageType.chat_message, 'Could not find user ' + unblock_alias)
-                self.outgoing_queue.put(msg)
-        else:
-            msg = Message(client.get_cid(), self.server_alias, MessageType.chat_message, 'You must be moderator of this room to unblock someone from it')
-            self.outgoing_queue.put(msg)
+    def unblock_user(self):
+        pass
+
+class Counter(dict):
+    def __missing__(self, key):
+        return 0
 
