@@ -27,7 +27,7 @@ class Server:
         self.client_alias_to_cid = {}
         self.chatroom = {}
         self.connected_client_socket = []
-        self.debug_queue = queue.Queue()
+        self.print_queue = queue.Queue()
 
         #self.send_MSGHandler = SendMessageHandler(self.socket)
         #self.receive_MSGHandler = ReceiveMessageHandler(self.socket)
@@ -42,13 +42,13 @@ class Server:
                     msg = self.controller.pop_outgoing()
                     sock = self.client_cid_to_sock[msg.cid]
                 except KeyError:
-                    self.debug_queue.put('Could not find cid {} in dict. Client has disconnected?'.format(msg.cid))
+                    self.print_queue.put('Could not find cid {} in dict. Client has disconnected?'.format(msg.cid))
                 else:
                     string = msg.to_string()
                     sock.send(string.encode())
-                    self.debug_queue.put(string)
+                    self.print_queue.put(string)
             except OSError as err:
-                self.debug_queue.put('OSError: {} in send loop on socket: {}'.format(err,sock.getpeername()))
+                self.print_queue.put('OSError: {} in send loop on socket: {}'.format(err,sock.getpeername()))
                    
     def start(self):
         self.socket.bind(self.get_adrs())
@@ -104,7 +104,7 @@ class Server:
         while True:
             try:
                 while True:
-                    print(self.debug_queue.get_nowait())
+                    print(self.print_queue.get_nowait())
             except queue.Empty:
                 pass
             read_sockets, write_sockets, error_sockets = select.select(self.connected_client_socket, [], [])
@@ -152,7 +152,7 @@ class Server:
                             pass
                         else:
                             temp_chatroom.remove_client(temp_cid)
-                        self.controller.do_chatroom_update(temp_chatroom)
+                            self.controller.do_chatroom_update(temp_chatroom)
                         del self.client_alias_to_cid[temp_client.get_alias()]
                         del self.client_sock_to_cid[sock]
                         del self.client_cid_to_sock[temp_cid]

@@ -145,12 +145,6 @@ class CMDcontroller:
         chatroom = self.chatroom_dict[client.get_chatroom_name()]
         self.__broadcast_data(msg, chatroom.client)
 
-    def start_server(self):
-        pass
-
-    def stop_server(self):
-        pass
-
     def __switch_chatroom(self, src_room, dest_room, client):
         src_room.remove_client(client.get_cid())
         dest_room.add_client(client.get_cid())
@@ -188,20 +182,25 @@ class CMDcontroller:
     def do_chatroom_update(self, chatroom):
         alias_list = list(map(lambda x: self.client_dict[x].get_alias(), chatroom.client))
         payload = chatroom.get_name() + ' ' + ' '.join(alias_list)
-        for cid in chatroom.client:
+        for cid in chatroom.get_cid_list():
             cli = self.client_dict[cid]
             msg = Message(cli.get_cid(), cli.get_alias(), MessageType.chatroom_update, payload)
             self.outgoing_queue.put(msg)
 
     def create_chatroom(self, name, client):
-        new_room = self.chatroom_dict[name] = Chatroom(name)
-        new_room.set_moderator(client)
-        client.add_created_room(name)
-        old_room = self.chatroom_dict[client.get_chatroom_name()]
-        self.__switch_chatroom(old_room, new_room, client)
+        try:
+            temp = self.chatroom_dict[name]
+        except KeyError:
+            new_room = self.chatroom_dict[name] = Chatroom(name)
+            new_room.set_moderator(client)
+            client.add_created_room(name)
+            old_room = self.chatroom_dict[client.get_chatroom_name()]
+            self.__switch_chatroom(old_room, new_room, client)
+        else:
+            msg = Message(client.get_cid(), self.server_alias, MessageType.chat_message, 'Chatroom ' + name + ' already exists')
+            self.outgoing_queue.put(msg)
 
     def delete_chatroom(self, client, chatroom_name):
-        #if moderator leaves a chatroom, boot everyone to main
         try:
             target_room = self.chatroom_dict[chatroom_name]
         except KeyError:
@@ -209,6 +208,8 @@ class CMDcontroller:
             self.outgoing_queue.put(msg)
         else:
             if  client == None or client == target_room.get_moderator():
+                if client:
+                    client.remove_created_room(chatroom_name)
                 kicked_client_cids = target_room.get_cid_list()
                 main_room = self.chatroom_dict[self.main_room_name]
                 main_room.add_client_list(kicked_client_cids)
@@ -233,7 +234,7 @@ class CMDcontroller:
             temp = self.client_alias_dict[alias]
         except KeyError:
             client.set_alias(alias)
-            self.client_alias_dict[alias] = client
+            self.client_alias_dict[alias] = client.get_cid()
             msg = Message(client.get_cid(), client.get_alias(), MessageType.alias, client.get_alias())
             cr = self.chatroom_dict[client.get_chatroom_name()]
             if len(old_alias) > 0:
@@ -259,8 +260,10 @@ class CMDcontroller:
                     if target_client.get_cid() in chatroom.get_cid_list():
                         dest = self.chatroom_dict[self.main_room_name]
                         self.__switch_chatroom(chatroom, dest, target_client)
-                    msg = Message(target_client.get_cid(), self.server_alias, MessageType.chat_message, 'You have been blocked from {} by {}'.format(roomname, client.get_alias()))
-                    self.outgoing_queue.put(msg)
+                    to_client = Message(client.get_cid(), self.server_alias, MessageType.chat_message, '{} has been blocked from {}'.format(block_alias, roomname))
+                    to_target = Message(target_client.get_cid(), self.server_alias, MessageType.chat_message, 'You have been blocked from {} by {}'.format(roomname, client.get_alias()))
+                    self.outgoing_queue.put(to_client)
+                    self.outgoing_queue.put(to_target)
                 else:
                     msg = Message(client.get_cid(), self.server_alias, MessageType.chat_message, 'You cannot block yourself, dummy')
                     self.outgoing_queue.put(msg)

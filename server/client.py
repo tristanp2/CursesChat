@@ -13,6 +13,8 @@ class Client:
 
     def add_created_room(self, cr_name):
         self.owned_rooms.append(cr_name)
+    def remove_created_room(self, cr_name):
+        self.owned_rooms.remove(cr_name)
 
     def get_owned_rooms(self):
         return self.owned_rooms
