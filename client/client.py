@@ -12,7 +12,6 @@ class Client:
     def __init__(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         #asumming the server is localhost and port is 10000
-        self.server_adrs = ('134.87.170.182', 10000)
         #self.server_adrs = ('134.87.170.182', 10000)
         self.received_queue = queue.Queue()
         self.outgoing_queue = queue.Queue()
@@ -38,7 +37,12 @@ class Client:
         return msg
 
     def main_loop(self):
-        alias = self.ui.start_login(self.server_adrs[0], )
+        if len(sys.argv) >= 2:
+            self.server_adrs = (sys.argv[1], 10000)
+        else:
+            print('Please specify an IP address to connect to','Usage: client.py ip_address')
+            return
+        alias = self.ui.start_login(self.server_adrs[0], False)
         self.login_message.set_alias(alias)
         try:
             self.socket.connect(self.server_adrs)
