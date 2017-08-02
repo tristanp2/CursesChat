@@ -37,14 +37,13 @@ class Client:
         return msg
 
     def main_loop(self):
-        if len(sys.argv) >= 2:
-            self.server_adrs = (sys.argv[1], 10000)
-        else:
-            print('Please specify an IP address to connect to','Usage: client.py ip_address')
-            return
-        alias = self.ui.start_login(self.server_adrs[0], False)
-        self.login_message.set_alias(alias)
         try:
+            if len(sys.argv) >= 2:
+                self.server_adrs = (sys.argv[1], 10000)
+            else:
+                raise AttributeError
+            alias = self.ui.start_login(self.server_adrs[0], False)
+            self.login_message.set_alias(alias)
             self.socket.connect(self.server_adrs)
             self.recv_thread.start()
             self.send_thread.start()
@@ -84,7 +83,15 @@ class Client:
                 sleep(0.2)
         except OSError:
             self.__set_exit('Networking exception')
-        self.ui.do_exit(self.exit_msg)
+            self.ui.do_exit()
+        except AttributeError:
+            self.ui.do_exit(None)
+            print('Please specify an IP address to connect to','Usage: client.py ip_address')
+        except:
+            self.__set_exit('Unknown exception')
+            self.ui.do_exit(self.exit_msg)
+        else:
+            self.ui.do_exit(self.exit_msg)
 
     def __set_exit(self, msg = None):
         self.exit_lock.acquire()
@@ -93,7 +100,7 @@ class Client:
         self.exit_lock.release()
 
     def __split_received(self, received):
-        return received.split(Message.end_char)
+        return received.split(Message.end_char)[:-1]
 
     def __send_loop(self):
         try:
@@ -109,8 +116,7 @@ class Client:
                 data = self.socket.recv(1024)
                 m_list = self.__split_received(data.decode())
                 for m in m_list:
-                    if m:
-                        self.received_queue.put(m)
+                    self.received_queue.put(m)
         except OSError:
             self.__set_exit('Networking exception')
 

@@ -5,6 +5,8 @@ from datetime import datetime
 from message_type_client import MessageType
 from message_client import Message
 from curses.textpad import Textbox, rectangle
+import locale
+code = locale.getpreferredencoding()
 
 class UI:
     time_format = '%H:%M:%S'
@@ -42,7 +44,6 @@ class UI:
             self.output_win = SubWindowWrapper(self.screen, 1, self.input_win.ulx, self.input_win.uly - 3, self.input_win.lrx, 1)
             self.info_win = SubWindowWrapper(self.screen, 3, self.output_win.lrx + 3, self.output_win.lry, self.scr_width - 3, 1)
             self.cname_win = SubWindowWrapper(self.screen, self.info_win.uly - 2, self.info_win.ulx, self.info_win.uly - 1, self.info_win.lrx)
-            self.cname_win.win.addstr('Global:')
         else:
             self.input_win = SubWindowWrapper(self.screen, self.scr_height - 5, 8, self.scr_height - 3, self.scr_width - 8, 1)
             self.output_win = SubWindowWrapper(self.screen, 1, self.input_win.ulx, self.input_win.uly - 3, self.input_win.lrx, 1)
@@ -57,23 +58,27 @@ class UI:
         if self.info_win:
             self.info_box = ExTextbox(self.info_win.win, True)
         self.input_thread = threading.Thread(None, self._input_loop)
-        self.input_thread.setDaemon(True)
+        self.input_thread.daemon = True
         self.input_thread.start()
     
-    def do_exit(self, msg = None):
+    def do_exit(self, msg = None, wait = 3):
         if msg:
             self.screen.clear()
             self.screen.addstr(1,1,'Exiting because: {}'.format(msg))
             self.refresh_screen()
-            wait = 5
+            wait = 3
             while wait > 0:
                 self.screen.addstr(2,1,str(wait))
                 self.refresh_screen()
                 wait -= 1
-                curses.napms(1000)
-                
-        self.screen.clear()
-        self.refresh_screen()
+                curses.napms(1000)        
+        self.__exit_curses()
+
+    def __exit_curses(self):
+        if self.screen:
+            self.screen.clear()
+            self.refresh_screen()
+        curses.echo()
         curses.endwin()
 
     def refresh_screen(self):
@@ -223,6 +228,7 @@ class ExTextbox(Textbox):
         self.win.refresh()
 
     def put_str(self, string, newline = True):
+        string_enc = string.encode()
         y, x = self.win.getyx()
         if self._scroll and y == self.maxy:
             if not self._reached_bottom:
@@ -230,7 +236,7 @@ class ExTextbox(Textbox):
             else:
                 self._shift_up()
                 self.win.move(self.maxy,0)
-        for ch in string:
+        for ch in string_enc:
             #newlines are inserted by superclass when line runs out, so ignore nl chars
             if ch == '\n':
                 continue
