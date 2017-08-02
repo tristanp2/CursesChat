@@ -83,11 +83,14 @@ class Client:
                 sleep(0.2)
         except OSError:
             self.__set_exit('Networking exception')
-            self.ui.do_exit()
+            self.ui.do_exit(self.exit_msg)
         except AttributeError:
             self.ui.do_exit(None)
             print('Please specify an IP address to connect to')
             print('Usage: client.py ip_address')
+        except KeyboardInterrupt:
+            self.__set_exit('Keyboard Interrupt')
+            self.ui.do_exit(self.exit_msg)
         except:
             self.__set_exit('Unknown exception')
             self.ui.do_exit(self.exit_msg)
