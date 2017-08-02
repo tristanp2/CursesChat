@@ -86,7 +86,8 @@ class Client:
             self.ui.do_exit()
         except AttributeError:
             self.ui.do_exit(None)
-            print('Please specify an IP address to connect to','Usage: client.py ip_address')
+            print('Please specify an IP address to connect to')
+            print('Usage: client.py ip_address')
         except:
             self.__set_exit('Unknown exception')
             self.ui.do_exit(self.exit_msg)
