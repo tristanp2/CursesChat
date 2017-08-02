@@ -17,6 +17,7 @@ class UI:
         self.scr_height, self.scr_width = self.screen.getmaxyx()
         self.current_room = ''
         curses.noecho()
+        curses.flushinp()
 
     def start_login(self, address, retry = False):
         login_win = SubWindowWrapper(self.screen, 1, 8, 2, self.scr_width)
@@ -60,6 +61,7 @@ class UI:
         self.input_thread = threading.Thread(None, self._input_loop)
         self.input_thread.daemon = True
         self.input_thread.start()
+        curses.flushinp()
     
     def do_exit(self, msg = None, wait = 3):
         if msg:
