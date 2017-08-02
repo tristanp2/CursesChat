@@ -33,7 +33,7 @@ class UI:
         del login_win
         self.screen.addstr(1,1, 'Attempting to connect to: ' + address)
         self.screen.refresh()
-        return alias
+        return alias.split(' ')[0]
 
     def end_login(self):
         self.screen.clear()
