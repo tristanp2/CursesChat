@@ -75,18 +75,24 @@ class Client:
                             self.alias = msg.get_payload()
                             if not logged_in:
                                 logged_in = True
-                        else:
+                        elif not logged_in and type == MessageType.refuse:
+                            self.ui.push_received(Message(MessageType.chat_message, 'Login rejected. Please try a new alias using /alias command', datetime.now(),'Client'))
+                        elif logged_in:
                             self.ui.push_received(msg)
                 except queue.Empty:
                     pass
-                if logged_in:
-                    outgoing = self.ui.get_outgoing()
-                    for m in outgoing:
-                        if m.get_type() == MessageType.quit:
-                            self.__set_exit()
-                        else:
-                            m.set_alias(self.alias)
-                            self.outgoing_queue.put(m)
+                outgoing = self.ui.get_outgoing()
+                for m in outgoing:
+                    type = m.get_type()
+                    if type == MessageType.quit:
+                        self.__set_exit()
+                    elif not logged_in:
+                        if type == MessageType.alias:
+                            self.login_message.set_alias(m.get_payload())
+                            self.outgoing_queue.put(self.login_message)
+                    else:
+                         m.set_alias(self.alias)
+                         self.outgoing_queue.put(m)
                 self.ui.update_chat()
                 sleep(0.2)
         except OSError:
