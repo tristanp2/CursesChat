@@ -48,6 +48,7 @@ class Client:
             self.recv_thread.start()
             self.send_thread.start()
             self.outgoing_queue.put(self.login_message)
+            """
             while True:
                 string = self.received_queue.get()
                 msg =  self.parse_received(string)
@@ -57,8 +58,11 @@ class Client:
                     self.outgoing_queue.put(self.login_message)
                 elif msg.get_type() == MessageType.alias:
                     self.alias = msg.get_payload()
-                    break                
+                    break        
+            """        
             self.ui.end_login()            
+            logged_in = False
+            self.ui.push_received(Message(MessageType.chat_message, 'Logging in...', datetime.now().strftime(self.ui.time_format),'Client'))
             self.ui.start_chat()
             while True and not self.exit:
                 try:
@@ -68,17 +72,20 @@ class Client:
                         type = msg.get_type()
                         if type == MessageType.alias:
                             self.alias = msg.get_payload()
+                            if not logged_in:
+                                logged_in = True
                         else:
                             self.ui.push_received(msg)
                 except queue.Empty:
                     pass
-                outgoing = self.ui.get_outgoing()
-                for m in outgoing:
-                    if m.get_type() == MessageType.quit:
-                        self.__set_exit()
-                    else:
-                        m.set_alias(self.alias)
-                        self.outgoing_queue.put(m)
+                if logged_in:
+                    outgoing = self.ui.get_outgoing()
+                    for m in outgoing:
+                        if m.get_type() == MessageType.quit:
+                            self.__set_exit()
+                        else:
+                            m.set_alias(self.alias)
+                            self.outgoing_queue.put(m)
                 self.ui.update_chat()
                 sleep(0.2)
         except OSError:
