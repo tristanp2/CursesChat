@@ -53,15 +53,18 @@ class UI:
 
         self.screen.addstr(self.input_win.uly, 1, 'Input:')
         self.screen.addstr(self.output_win.uly, 1, 'Chat: ')
+        self.refresh_screen()
         
         self.input_box = ExTextbox(self.input_win.win)
         self.output_box = ExTextbox(self.output_win.win, True)
         if self.info_win:
             self.info_box = ExTextbox(self.info_win.win, True)
+        self.refresh_screen()
         self.input_thread = threading.Thread(None, self._input_loop)
         self.input_thread.daemon = True
         self.input_thread.start()
         curses.flushinp()
+        self.refresh_screen()
     
     def do_exit(self, msg = None, wait = 3):
         if msg:
@@ -84,8 +87,7 @@ class UI:
         curses.endwin()
 
     def refresh_screen(self):
-        if self.screen.is_wintouched():
-            self.screen.refresh()
+        self.screen.refresh()
 
     #empties the outgoing queue contents into a list
     def get_outgoing(self):

@@ -41,6 +41,7 @@ class Client:
             if len(sys.argv) >= 2:
                 self.server_adrs = (sys.argv[1], 10000)
             else:
+                #TODO: Make different exception for this
                 raise AttributeError
             alias = self.ui.start_login(self.server_adrs[0], False)
             self.login_message.set_alias(alias)
@@ -62,7 +63,7 @@ class Client:
             """        
             self.ui.end_login()            
             logged_in = False
-            self.ui.push_received(Message(MessageType.chat_message, 'Logging in...', datetime.now().strftime(self.ui.time_format),'Client'))
+            self.ui.push_received(Message(MessageType.chat_message, 'Logging in...', datetime.now(),'Client'))
             self.ui.start_chat()
             while True and not self.exit:
                 try:
@@ -95,6 +96,7 @@ class Client:
             self.ui.do_exit(None)
             print('Please specify an IP address to connect to')
             print('Usage: client.py ip_address')
+            raise
         except KeyboardInterrupt:
             self.__set_exit('Keyboard Interrupt')
             self.ui.do_exit(self.exit_msg)
