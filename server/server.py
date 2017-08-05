@@ -16,6 +16,7 @@ class Server:
         self.port = port
         #create a TCP/IP socket
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server_adrs = (hostname, port)
         self.idcounter = idcounter
         #we can mark used id as 'u' and free id as 'f'
@@ -28,6 +29,7 @@ class Server:
         self.chatroom = {}
         self.connected_client_socket = []
         self.print_queue = queue.Queue()
+        self.remove_client_lock = threading.Lock()
 
         #self.send_MSGHandler = SendMessageHandler(self.socket)
         #self.receive_MSGHandler = ReceiveMessageHandler(self.socket)
@@ -48,7 +50,9 @@ class Server:
                     sock.send(string.encode())
                     self.print_queue.put(string)
             except OSError as err:
-                self.print_queue.put('OSError: {} in send loop on socket: {}'.format(err,sock.getpeername()))
+                self.__remove_client_by_socket(sock)
+                self.print_queue.put('OSError: {} in send loop on cid: {}\n Client removed from system'.format(err, msg.cid))
+
                    
     def start(self):
         self.socket.bind(self.get_adrs())
@@ -98,6 +102,44 @@ class Server:
         msg = Message(cid, alias, type, payload)
         #TODO: push to receive queue, so we dont need to return msg
         return msg
+    
+    #Ya this function is pretty ugly, but I was getting some unexpected key errors during deletion
+    #Should really have a class that handles all these dicts
+    def __remove_client_by_socket(self, socket):
+        self.remove_client_lock.acquire()
+        try:
+            temp_cid = self.client_sock_to_cid[socket]
+            temp_client = self.client_cid_to_client[temp_cid]
+        except KeyError:
+            pass
+        else:
+            for room_name in temp_client.get_owned_rooms():
+                self.controller.delete_chatroom(None, room_name)
+            try:
+                temp_chatroom = self.chatroom[temp_client.get_chatroom_name()]
+            except KeyError:
+                pass
+            else:
+                temp_chatroom.remove_client(temp_cid)
+                self.controller.do_chatroom_update(temp_chatroom)
+            try:
+                del self.client_alias_to_cid[temp_client.get_alias()]
+            except KeyError:
+                pass
+            try:
+                del self.client_sock_to_cid[socket]
+            except KeyError:
+                pass
+            try:
+                del self.client_cid_to_sock[temp_cid]
+            except KeyError:
+                pass
+            try:
+                del self.client_cid_to_client[temp_cid]
+            except KeyError:
+                pass
+        self.freeup_cid(temp_cid)
+        self.remove_client_lock.release()
 
     def main_loop(self):
         self.send_thread.start()
@@ -126,9 +168,6 @@ class Server:
                     self.client_cid_to_client[cid] = client
                     self.chatroom['main_chatroom'].add_client(cid)
                     print('Client {!r} connected'.format(client_adrs))
-                    # TODO: broadcast alias not this, but how can I get alias
-                    # self.broadcast_data(connection, '{!r} entered chatroom'.format(client_adrs) , self.connected_client_socket)
-
                 else:
                     try:
                         data = sock.recv(1024)
@@ -142,20 +181,4 @@ class Server:
                         print('Client {} is offline'.format(sock.getpeername()))
                         sock.close()
                         self.connected_client_socket.remove(sock)
-                        temp_cid = self.client_sock_to_cid[sock]
-                        temp_client = self.client_cid_to_client[temp_cid]
-                        for room_name in temp_client.get_owned_rooms():
-                            self.controller.delete_chatroom(None, room_name)
-                        try:
-                            temp_chatroom = self.chatroom[temp_client.get_chatroom_name()]
-                        except KeyError:
-                            pass
-                        else:
-                            temp_chatroom.remove_client(temp_cid)
-                            self.controller.do_chatroom_update(temp_chatroom)
-                        del self.client_alias_to_cid[temp_client.get_alias()]
-                        del self.client_sock_to_cid[sock]
-                        del self.client_cid_to_sock[temp_cid]
-                        del self.client_cid_to_client[temp_cid]
-                        self.freeup_cid(temp_cid)
-                        continue
+                        self.__remove_client_by_socket(sock)
