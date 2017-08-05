@@ -16,7 +16,12 @@ mainserver = Server(hostname, port, idcounter, freeid, sendQ, receiveQ, CMDContr
 mainserver.start()
 
 print('Current server ip is ' + hostname)
-
-mainserver.main_loop()
+try:
+    mainserver.main_loop()
+except KeyboardInterrupt:
+    pass
+except:
+    print('Unexpected exception')
+    raise
 
 mainserver.shutdown(mainserver.socket)

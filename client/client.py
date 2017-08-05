@@ -38,29 +38,14 @@ class Client:
 
     def main_loop(self):
         try:
-            if len(sys.argv) >= 2:
-                self.server_adrs = (sys.argv[1], 10000)
-            else:
-                #TODO: Make different exception for this
-                raise AttributeError
+            assert len(sys.argv) == 2
+            self.server_adrs = (sys.argv[1], 10000)
             alias = self.ui.start_login(self.server_adrs[0], False)
             self.login_message.set_alias(alias)
             self.socket.connect(self.server_adrs)
             self.recv_thread.start()
             self.send_thread.start()
             self.outgoing_queue.put(self.login_message)
-            """
-            while True:
-                string = self.received_queue.get()
-                msg =  self.parse_received(string)
-                if msg.get_type() == MessageType.refuse:
-                    alias = self.ui.start_login(self.server_adrs[0], True)
-                    self.login_message.set_alias(alias)
-                    self.outgoing_queue.put(self.login_message)
-                elif msg.get_type() == MessageType.alias:
-                    self.alias = msg.get_payload()
-                    break        
-            """        
             self.ui.end_login()            
             logged_in = False
             self.ui.push_received(Message(MessageType.chat_message, 'Logging in...', datetime.now(),'Client'))
@@ -98,17 +83,17 @@ class Client:
         except OSError:
             self.__set_exit('Networking exception')
             self.ui.do_exit(self.exit_msg)
-        except AttributeError:
-            self.ui.do_exit(None)
+        except AssertionError:
+            self.ui.do_exit()
             print('Please specify an IP address to connect to')
             print('Usage: client.py ip_address')
-            raise
         except KeyboardInterrupt:
             self.__set_exit('Keyboard Interrupt')
             self.ui.do_exit(self.exit_msg)
         except:
             self.__set_exit('Unknown exception')
             self.ui.do_exit(self.exit_msg)
+            raise
         else:
             self.ui.do_exit(self.exit_msg)
 
