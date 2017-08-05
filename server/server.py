@@ -138,7 +138,7 @@ class Server:
                 del self.client_cid_to_client[temp_cid]
             except KeyError:
                 pass
-        self.freeup_cid(temp_cid)
+            self.freeup_cid(temp_cid)
         self.remove_client_lock.release()
 
     def main_loop(self):
