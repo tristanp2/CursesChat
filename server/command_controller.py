@@ -132,7 +132,7 @@ class CMDcontroller:
     def help(self, client):
         # print options.values()?
         help_list = []
-        restricted = [MessageType.chat_message.name, MessageType.chatroom_update.name, MessageType.start_server.name, MessageType.stop_server.name, MessageType.login.name, MessageType.logout.name]
+        restricted = [MessageType.chat_message.name, MessageType.chatroom_update.name, MessageType.start_server.name, MessageType.stop_server.name, MessageType.login.name, MessageType.logout.name, MessageType.refuse.name]
         for value in MessageType:
             if value.name not in restricted:
                 help_list.append(value.name)
